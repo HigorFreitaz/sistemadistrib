@@ -1,0 +1,22 @@
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+out/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Dados gerados em tempo de execucao (persistencia local do servidor)
+server/dados/
+*.log

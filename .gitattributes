@@ -1,0 +1,14 @@
+# Normaliza finais de linha para manter os scripts do wrapper executaveis
+# em qualquer sistema operacional (Windows do aluno, Linux do laboratorio).
+* text=auto eol=lf
+
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+mvnw text eol=lf
+mvnw.cmd text eol=crlf
+
+*.jar binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
