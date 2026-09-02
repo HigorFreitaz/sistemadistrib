@@ -1,1 +1,1 @@
-# sistemadistrib
+Projeto de Sistemas Distribuídos
