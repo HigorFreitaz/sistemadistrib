@@ -6,6 +6,8 @@ package br.edu.utfpr.sd.garagem.client.net;
  */
 public final class ConnectionException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
     public ConnectionException(String message, Throwable cause) {
         super(message, cause);
     }
