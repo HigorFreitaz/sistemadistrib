@@ -1,0 +1,85 @@
+package br.edu.utfpr.sd.garagem.server.net;
+
+import br.edu.utfpr.sd.garagem.common.json.JsonSupport;
+import br.edu.utfpr.sd.garagem.common.model.Session;
+import br.edu.utfpr.sd.garagem.common.protocol.LoginRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.Methods;
+import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
+import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
+import br.edu.utfpr.sd.garagem.common.validation.PasswordValidator;
+import br.edu.utfpr.sd.garagem.common.validation.UsernameValidator;
+import br.edu.utfpr.sd.garagem.server.service.AuthService;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+/**
+ * Interpreta cada linha JSON recebida de um cliente e produz a resposta do
+ * protocolo, roteando por {@code method}. Único ponto do servidor que
+ * conhece o formato das mensagens de cada operação.
+ */
+public final class RequestDispatcher {
+
+    private final AuthService authService;
+    private final ServerEventListener listener;
+
+    public RequestDispatcher(AuthService authService, ServerEventListener listener) {
+        this.authService = authService;
+        this.listener = listener;
+    }
+
+    /** Processa uma linha recebida do cliente e devolve a resposta a ser enviada. */
+    public Response dispatch(String rawLine) {
+        JsonObject envelope;
+        try {
+            envelope = JsonParser.parseString(rawLine).getAsJsonObject();
+        } catch (RuntimeException e) {
+            return Response.error(StatusCode.BAD_REQUEST, "requisicao malformada");
+        }
+        JsonElement methodElement = envelope.get("method");
+        if (methodElement == null || !methodElement.isJsonPrimitive()) {
+            return Response.error(StatusCode.BAD_REQUEST, "campo method ausente");
+        }
+        String method = methodElement.getAsString();
+        return switch (method) {
+            case Methods.LOGIN -> handleLogin(envelope);
+            case Methods.LOGOUT -> handleLogout(envelope);
+            // TODO EP-2: registrar aqui os demais methods do protocolo (cadastro
+            // de usuario, CRUD de vagas/operacoes, CRUD admin), cada um
+            // delegando a um servico proprio e reaproveitando
+            // authService.resolveSession para autenticar a requisicao.
+            default -> Response.error(StatusCode.NOT_FOUND, "operacao nao suportada");
+        };
+    }
+
+    private Response handleLogin(JsonObject envelope) {
+        LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
+        if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
+            return Response.error(StatusCode.BAD_REQUEST, "usuario ou senha em formato invalido");
+        }
+        return authService.login(request.getUsername(), request.getPassword())
+                .map(this::onLoginSuccess)
+                // mensagem generica: nunca revela se o erro foi no usuario ou na senha
+                .orElseGet(() -> Response.error(StatusCode.UNAUTHORIZED, "usuario ou senha invalidos"));
+    }
+
+    private Response onLoginSuccess(Session session) {
+        listener.onSessionCountChanged(authService.activeSessionCount());
+        return Response.ok("login realizado com sucesso", new TokenData(session.getToken()));
+    }
+
+    private Response handleLogout(JsonObject envelope) {
+        LogoutRequest request = JsonSupport.GSON.fromJson(envelope, LogoutRequest.class);
+        if (request.getToken() == null || request.getToken().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "token nao informado");
+        }
+        boolean removed = authService.logout(request.getToken());
+        if (removed) {
+            listener.onSessionCountChanged(authService.activeSessionCount());
+            return Response.ok("logout realizado com sucesso", null);
+        }
+        return Response.error(StatusCode.UNAUTHORIZED, "token invalido ou sessao inexistente");
+    }
+}
