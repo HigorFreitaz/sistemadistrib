@@ -1,0 +1,126 @@
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-background-color: #EEF1F6;
+    -fx-font-size: 13px;
+}
+
+/* ---- cabecalho ---- */
+.header-bar {
+    -fx-background-color: linear-gradient(to right, #24345C, #3A6FF7);
+    -fx-padding: 18 26;
+}
+.app-title-on-dark {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+.app-subtitle-on-dark {
+    -fx-font-size: 12px;
+    -fx-text-fill: #D6E0FF;
+}
+
+/* ---- cartao central ---- */
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,60,0.15), 18, 0, 0, 4);
+}
+.card-title {
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #21283B;
+}
+.field-label {
+    -fx-text-fill: #55607A;
+    -fx-font-size: 12px;
+}
+.placeholder-note {
+    -fx-text-fill: #97A1B7;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+.status-label {
+    -fx-text-fill: #6B7280;
+    -fx-font-size: 12px;
+}
+.error-label {
+    -fx-text-fill: #D6414B;
+    -fx-font-size: 11px;
+}
+
+/* ---- campos de entrada ---- */
+.text-field, .password-field {
+    -fx-background-color: #F7F9FC;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-color: #D7DEE9;
+    -fx-border-width: 1;
+    -fx-padding: 7 10;
+}
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #3A6FF7;
+    -fx-background-color: white;
+}
+
+/* ---- botoes ---- */
+.button-primary {
+    -fx-background-color: #3A6FF7;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 22;
+    -fx-cursor: hand;
+}
+.button-primary:hover { -fx-background-color: #2C5CDB; }
+.button-primary:armed { -fx-background-color: #24469E; }
+.button-primary:disabled { -fx-background-color: #AFC2F5; -fx-text-fill: #EEF2FF; }
+
+.button-secondary {
+    -fx-background-color: transparent;
+    -fx-border-color: #C7D0DE;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #3A445C;
+    -fx-padding: 7 20;
+    -fx-cursor: hand;
+}
+.button-secondary:hover { -fx-background-color: #EEF1F6; }
+
+.button-secondary-on-dark {
+    -fx-background-color: rgba(255,255,255,0.12);
+    -fx-border-color: rgba(255,255,255,0.55);
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: white;
+    -fx-padding: 7 20;
+    -fx-cursor: hand;
+}
+.button-secondary-on-dark:hover { -fx-background-color: rgba(255,255,255,0.22); }
+
+/* ---- indicador de status (pill) ---- */
+.status-pill-online {
+    -fx-background-color: #DFF5E7;
+    -fx-text-fill: #1C8A4C;
+    -fx-background-radius: 14;
+    -fx-padding: 5 14;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+.status-pill-offline {
+    -fx-background-color: #FBE4E4;
+    -fx-text-fill: #C23B3B;
+    -fx-background-radius: 14;
+    -fx-padding: 5 14;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+/* ---- area de log (servidor) ---- */
+.log-area {
+    -fx-control-inner-background: #10141C;
+    -fx-text-fill: #D7E0EA;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 12px;
+    -fx-highlight-fill: #3A6FF7;
+    -fx-highlight-text-fill: white;
+}
