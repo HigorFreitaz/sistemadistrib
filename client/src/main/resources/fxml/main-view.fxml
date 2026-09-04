@@ -3,7 +3,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -12,8 +11,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="br.edu.utfpr.sd.garagem.client.ui.MainController"
-            stylesheets="@../css/app.css">
+            fx:controller="br.edu.utfpr.sd.garagem.client.ui.MainController">
     <top>
         <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="16">
             <VBox spacing="4" HBox.hgrow="ALWAYS">
@@ -24,24 +22,22 @@
         </HBox>
     </top>
     <center>
-        <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="transparent-scroll">
-            <StackPane>
+        <StackPane>
+            <padding>
+                <Insets top="24" right="24" bottom="24" left="24"/>
+            </padding>
+            <VBox styleClass="card" maxWidth="440" maxHeight="-Infinity" spacing="14">
                 <padding>
-                    <Insets top="30" right="30" bottom="30" left="30"/>
+                    <Insets top="26" right="30" bottom="26" left="30"/>
                 </padding>
-                <VBox styleClass="card" maxWidth="440" maxHeight="-Infinity" spacing="14">
-                    <padding>
-                        <Insets top="26" right="30" bottom="26" left="30"/>
-                    </padding>
-                    <Label fx:id="usernameLabel" styleClass="card-title" wrapText="true"/>
-                    <Separator/>
-                    <!-- TODO EP-2: substituir esta nota por um painel real de
-                         vagas disponiveis por andar, atualizado em tempo real. -->
-                    <Label text="O painel de vagas disponiveis por andar chega na proxima entrega (EP-2)."
-                           wrapText="true" styleClass="placeholder-note"/>
-                    <Label fx:id="statusLabel" wrapText="true" styleClass="status-label"/>
-                </VBox>
-            </StackPane>
-        </ScrollPane>
+                <Label fx:id="usernameLabel" styleClass="card-title" wrapText="true"/>
+                <Separator/>
+                <!-- TODO EP-2: substituir esta nota por um painel real de
+                     vagas disponiveis por andar, atualizado em tempo real. -->
+                <Label text="O painel de vagas disponiveis por andar chega na proxima entrega (EP-2)."
+                       wrapText="true" styleClass="placeholder-note"/>
+                <Label fx:id="statusLabel" wrapText="true" styleClass="status-label"/>
+            </VBox>
+        </StackPane>
     </center>
 </BorderPane>
