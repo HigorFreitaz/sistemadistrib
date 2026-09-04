@@ -20,14 +20,21 @@ import java.util.logging.Logger;
 
 /**
  * Controller da tela de cadastro de usuário (fluxo descrito em
- * {@code docs/Requisitos Funcionais e não funcionais.docx}). Valida o
- * formato dos campos em tempo real e envia o cadastro em uma thread de
- * segundo plano, usando uma conexão própria (fechada logo em seguida —
- * cadastro não abre sessão, o usuário precisa logar depois).
+ * {@code docs/Requisitos Funcionais e não funcionais.docx}). Cada regra de
+ * formato é mostrada como um item de checklist que fica vermelho ou verde
+ * conforme o usuário digita, em vez de uma única mensagem de erro genérica.
+ * Envia o cadastro em uma thread de segundo plano, usando uma conexão
+ * própria (fechada logo em seguida — cadastro não abre sessão, o usuário
+ * precisa logar depois).
  */
 public final class RegisterController {
 
     private static final Logger LOGGER = Logger.getLogger(RegisterController.class.getName());
+    private static final String USERNAME_LENGTH_HINT = "Entre 3 e 20 caracteres";
+    private static final String USERNAME_CHARSET_HINT = "Somente letras minusculas, numeros, '.' ou '_'";
+    private static final String PASSWORD_LENGTH_HINT = "Entre 8 e 20 caracteres";
+    private static final String PASSWORD_CHARSET_HINT = "Somente letras, numeros e os simbolos # . * & % $ @ ! ( ) - _ = +";
+    private static final String CONFIRM_HINT = "As senhas coincidem";
 
     @FXML
     private TextField usernameField;
@@ -36,11 +43,15 @@ public final class RegisterController {
     @FXML
     private PasswordField confirmPasswordField;
     @FXML
-    private Label usernameErrorLabel;
+    private Label usernameLengthHint;
     @FXML
-    private Label passwordErrorLabel;
+    private Label usernameCharsetHint;
     @FXML
-    private Label confirmPasswordErrorLabel;
+    private Label passwordLengthHint;
+    @FXML
+    private Label passwordCharsetHint;
+    @FXML
+    private Label confirmPasswordHint;
     @FXML
     private Label statusLabel;
     @FXML
@@ -62,9 +73,6 @@ public final class RegisterController {
 
     @FXML
     private void initialize() {
-        usernameErrorLabel.setText("usuario invalido: 3-20 letras minusculas, numeros, '.' ou '_'");
-        passwordErrorLabel.setText("senha invalida: 8-20 caracteres, sem simbolo nao permitido");
-        confirmPasswordErrorLabel.setText("as senhas nao conferem");
         usernameField.textProperty().addListener((obs, old, value) -> validateUsername());
         passwordField.textProperty().addListener((obs, old, value) -> {
             validatePassword();
@@ -77,30 +85,30 @@ public final class RegisterController {
     }
 
     private void validateUsername() {
-        boolean valid = UsernameValidator.isValid(usernameField.getText());
-        showError(usernameErrorLabel, !usernameField.getText().isEmpty() && !valid);
+        String username = usernameField.getText();
+        setHint(usernameLengthHint, USERNAME_LENGTH_HINT, UsernameValidator.hasValidLength(username));
+        setHint(usernameCharsetHint, USERNAME_CHARSET_HINT, UsernameValidator.hasOnlyAllowedCharacters(username));
         updateRegisterButtonState();
     }
 
     private void validatePassword() {
-        boolean valid = PasswordValidator.isValid(passwordField.getText());
-        showError(passwordErrorLabel, !passwordField.getText().isEmpty() && !valid);
+        String password = passwordField.getText();
+        setHint(passwordLengthHint, PASSWORD_LENGTH_HINT, PasswordValidator.hasValidLength(password));
+        setHint(passwordCharsetHint, PASSWORD_CHARSET_HINT, PasswordValidator.hasOnlyAllowedCharacters(password));
         updateRegisterButtonState();
     }
 
     private void validateConfirmPassword() {
-        boolean matches = confirmPasswordField.getText().equals(passwordField.getText());
-        showError(confirmPasswordErrorLabel, !confirmPasswordField.getText().isEmpty() && !matches);
+        boolean matches = !confirmPasswordField.getText().isEmpty()
+                && confirmPasswordField.getText().equals(passwordField.getText());
+        setHint(confirmPasswordHint, CONFIRM_HINT, matches);
         updateRegisterButtonState();
     }
 
-    /**
-     * Um Label invisível ainda ocupa espaço no layout a menos que também
-     * seja marcado como "unmanaged" — por isso as duas chamadas juntas.
-     */
-    private static void showError(Label label, boolean show) {
-        label.setVisible(show);
-        label.setManaged(show);
+    /** Marca um item do checklist como satisfeito (verde, com "✓") ou pendente (vermelho, com "•"). */
+    private static void setHint(Label hint, String text, boolean satisfied) {
+        hint.setText((satisfied ? "✓ " : "• ") + text);
+        hint.getStyleClass().setAll(satisfied ? "hint-valid" : "hint-invalid");
     }
 
     private void updateRegisterButtonState() {

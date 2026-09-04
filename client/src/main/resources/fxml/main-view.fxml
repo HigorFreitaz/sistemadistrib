@@ -13,7 +13,10 @@
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="br.edu.utfpr.sd.garagem.client.ui.MainController">
     <top>
-        <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="16">
+        <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="14">
+            <StackPane styleClass="logo-badge">
+                <Label text="P" styleClass="logo-badge-text"/>
+            </StackPane>
             <VBox spacing="4" HBox.hgrow="ALWAYS">
                 <Label text="SD Garagem" styleClass="app-title-on-dark"/>
                 <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark" wrapText="true"/>

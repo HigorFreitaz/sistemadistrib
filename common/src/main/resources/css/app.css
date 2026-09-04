@@ -18,6 +18,23 @@
     -fx-font-size: 12px;
     -fx-text-fill: #D6E0FF;
 }
+.logo-badge {
+    -fx-background-color: rgba(255,255,255,0.16);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255,255,255,0.4);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
+    -fx-alignment: center;
+}
+.logo-badge-text {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
 
 /* ---- cartao central ---- */
 .card {
@@ -47,15 +64,33 @@
     -fx-text-fill: #D6414B;
     -fx-font-size: 11px;
 }
+.hint-invalid {
+    -fx-text-fill: #C23B3B;
+    -fx-font-size: 11px;
+}
+.hint-valid {
+    -fx-text-fill: #1C8A4C;
+    -fx-font-size: 11px;
+}
 
-/* ---- campos de entrada ---- */
+/* ---- campos de entrada ----
+   -fx-background-insets/-fx-border-insets zerados porque o estilo padrao
+   do JavaFX (Modena) define varias camadas com insets diferentes; sem
+   isso, o cantos arredondados customizados ficam com um contorno duplo
+   estranho. -fx-faint-focus-color remove o brilho de foco padrao, que
+   duplicava com a nossa propria borda azul de foco. */
 .text-field, .password-field {
     -fx-background-color: #F7F9FC;
+    -fx-background-insets: 0;
     -fx-background-radius: 6;
-    -fx-border-radius: 6;
     -fx-border-color: #D7DEE9;
+    -fx-border-insets: 0;
+    -fx-border-radius: 6;
     -fx-border-width: 1;
     -fx-padding: 7 10;
+    -fx-prompt-text-fill: #A7B0C2;
+    -fx-focus-color: #3A6FF7;
+    -fx-faint-focus-color: transparent;
 }
 .text-field:focused, .password-field:focused {
     -fx-border-color: #3A6FF7;

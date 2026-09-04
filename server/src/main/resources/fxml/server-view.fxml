@@ -8,6 +8,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
@@ -15,15 +16,16 @@
             fx:controller="br.edu.utfpr.sd.garagem.server.ui.ServerController">
     <top>
         <VBox>
-            <VBox styleClass="header-bar">
-                <FlowPane hgap="12" vgap="8" alignment="CENTER_LEFT">
-                    <VBox spacing="4" minWidth="220">
-                        <Label text="SD Garagem" styleClass="app-title-on-dark"/>
-                        <Label text="Painel do Servidor" styleClass="app-subtitle-on-dark"/>
-                    </VBox>
-                    <Label fx:id="statusLabel" text="Parado" styleClass="status-pill-offline"/>
-                </FlowPane>
-            </VBox>
+            <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="14">
+                <StackPane styleClass="logo-badge">
+                    <Label text="P" styleClass="logo-badge-text"/>
+                </StackPane>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="SD Garagem" styleClass="app-title-on-dark"/>
+                    <Label text="Painel do Servidor" styleClass="app-subtitle-on-dark"/>
+                </VBox>
+                <Label fx:id="statusLabel" text="Parado" styleClass="status-pill-offline"/>
+            </HBox>
             <FlowPane styleClass="toolbar" hgap="10" vgap="8" alignment="CENTER_LEFT">
                 <Label text="Porta:" styleClass="field-label"/>
                 <TextField fx:id="portField" prefWidth="80"/>
