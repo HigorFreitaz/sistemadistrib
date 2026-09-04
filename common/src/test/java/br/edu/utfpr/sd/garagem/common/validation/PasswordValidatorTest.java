@@ -12,11 +12,11 @@ class PasswordValidatorTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "Senha123",
-            "abcXYZ",
-            "123456",
+            "abcXYZ12",
+            "12345678",
             "Admin@123",
-            "#.*&%$@!()-_=+",
-            "a"
+            "#.*&%$@!()-_=+AB",
+            "aaaaaaaaaaaaaaaaaaaa"
     })
     void aceitaSenhasValidas(String password) {
         assertTrue(PasswordValidator.isValid(password));
@@ -30,6 +30,26 @@ class PasswordValidatorTest {
     @Test
     void rejeitaVazia() {
         assertFalse(PasswordValidator.isValid(""));
+    }
+
+    @Test
+    void rejeitaSeteCaracteres() {
+        assertFalse(PasswordValidator.isValid("Senha12"));
+    }
+
+    @Test
+    void aceitaOitoCaracteres() {
+        assertTrue(PasswordValidator.isValid("Senha123"));
+    }
+
+    @Test
+    void aceitaVinteCaracteres() {
+        assertTrue(PasswordValidator.isValid("a".repeat(20)));
+    }
+
+    @Test
+    void rejeitaVinteEUmCaracteres() {
+        assertFalse(PasswordValidator.isValid("a".repeat(21)));
     }
 
     @Test
