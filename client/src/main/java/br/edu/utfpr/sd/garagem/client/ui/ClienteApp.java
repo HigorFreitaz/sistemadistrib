@@ -11,9 +11,13 @@ import java.io.IOException;
 
 /**
  * Ponto de entrada JavaFX do cliente: alterna entre as telas de login,
- * cadastro e principal na mesma janela.
+ * cadastro e principal na mesma janela, sempre no mesmo tamanho — trocar
+ * de tela não deve fazer a janela "pular" de tamanho.
  */
 public final class ClienteApp extends Application {
+
+    private static final double WIDTH = 480;
+    private static final double HEIGHT = 560;
 
     public static void main(String[] args) {
         launch(args);
@@ -25,8 +29,8 @@ public final class ClienteApp extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("SD Garagem - Cliente");
-        primaryStage.setMinWidth(400);
-        primaryStage.setMinHeight(380);
+        primaryStage.setMinWidth(WIDTH);
+        primaryStage.setMinHeight(HEIGHT);
         showLogin();
         primaryStage.show();
     }
@@ -46,7 +50,7 @@ public final class ClienteApp extends Application {
             if (prefillUsername != null) {
                 controller.setUsername(prefillUsername);
             }
-            primaryStage.setScene(new Scene(root, 420, 340));
+            setScene(root);
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a tela de login", e);
         }
@@ -59,7 +63,7 @@ public final class ClienteApp extends Application {
             Parent root = loader.load();
             RegisterController controller = loader.getController();
             controller.init(this, host, port);
-            primaryStage.setScene(new Scene(root, 440, 420));
+            setScene(root);
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a tela de cadastro", e);
         }
@@ -72,9 +76,15 @@ public final class ClienteApp extends Application {
             Parent root = loader.load();
             MainController controller = loader.getController();
             controller.init(this, username, token, connector);
-            primaryStage.setScene(new Scene(root, 480, 360));
+            setScene(root);
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a tela principal", e);
         }
+    }
+
+    private void setScene(Parent root) {
+        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+        primaryStage.setScene(scene);
     }
 }

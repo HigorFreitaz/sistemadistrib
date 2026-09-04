@@ -6,7 +6,6 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ProgressIndicator?>
-<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -17,8 +16,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="br.edu.utfpr.sd.garagem.client.ui.LoginController"
-            stylesheets="@../css/app.css">
+            fx:controller="br.edu.utfpr.sd.garagem.client.ui.LoginController">
     <top>
         <VBox styleClass="header-bar" spacing="4">
             <Label text="SD Garagem" styleClass="app-title-on-dark"/>
@@ -26,43 +24,41 @@
         </VBox>
     </top>
     <center>
-        <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="transparent-scroll">
-            <StackPane>
+        <StackPane>
+            <padding>
+                <Insets top="24" right="24" bottom="24" left="24"/>
+            </padding>
+            <VBox styleClass="card" maxWidth="380" maxHeight="-Infinity" spacing="14" alignment="TOP_CENTER">
                 <padding>
-                    <Insets top="30" right="30" bottom="30" left="30"/>
+                    <Insets top="26" right="30" bottom="26" left="30"/>
                 </padding>
-                <VBox styleClass="card" maxWidth="360" maxHeight="-Infinity" spacing="14">
-                    <padding>
-                        <Insets top="26" right="30" bottom="26" left="30"/>
-                    </padding>
-                    <Label text="Entrar" styleClass="card-title"/>
-                    <GridPane hgap="10" vgap="6">
-                        <columnConstraints>
-                            <ColumnConstraints minWidth="70"/>
-                            <ColumnConstraints hgrow="ALWAYS"/>
-                        </columnConstraints>
-                        <Label text="Host" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                        <TextField fx:id="hostField" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                        <Label text="Porta" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                        <TextField fx:id="portField" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                        <Label text="Usuario" styleClass="field-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                        <TextField fx:id="usernameField" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                        <Label fx:id="usernameErrorLabel" wrapText="true" visible="false" styleClass="error-label"
-                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-                        <Label text="Senha" styleClass="field-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                        <PasswordField fx:id="passwordField" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-                        <Label fx:id="passwordErrorLabel" wrapText="true" visible="false" styleClass="error-label"
-                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-                    </GridPane>
-                    <HBox spacing="10" alignment="CENTER_LEFT">
-                        <Button fx:id="loginButton" text="Entrar" onAction="#handleLogin" disable="true"
-                                defaultButton="true" styleClass="button-primary"/>
-                        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="20" prefHeight="20"/>
-                        <Label fx:id="statusLabel" wrapText="true" styleClass="status-label"/>
-                    </HBox>
-                    <Hyperlink text="Criar conta" onAction="#handleGoToRegister"/>
-                </VBox>
-            </StackPane>
-        </ScrollPane>
+                <Label text="Entrar" styleClass="card-title"/>
+                <GridPane hgap="10" vgap="6">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="70"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                    <Label text="Host" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="hostField" maxWidth="Infinity" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="Porta" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <TextField fx:id="portField" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    <Label text="Usuario" styleClass="field-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="usernameField" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                    <Label fx:id="usernameErrorLabel" wrapText="true" visible="false" managed="false" styleClass="error-label"
+                           GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    <Label text="Senha" styleClass="field-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="passwordField" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordErrorLabel" wrapText="true" visible="false" managed="false" styleClass="error-label"
+                           GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                </GridPane>
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="loginButton" text="Entrar" onAction="#handleLogin" disable="true"
+                            defaultButton="true" styleClass="button-primary"/>
+                    <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="20" prefHeight="20"/>
+                </HBox>
+                <Label fx:id="statusLabel" wrapText="true" textAlignment="CENTER" styleClass="status-label"/>
+                <Hyperlink text="Criar conta" onAction="#handleGoToRegister" alignment="CENTER" maxWidth="Infinity"/>
+            </VBox>
+        </StackPane>
     </center>
 </BorderPane>

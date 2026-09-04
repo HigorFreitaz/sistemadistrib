@@ -78,14 +78,23 @@ public final class LoginController {
 
     private void validateUsername() {
         boolean valid = UsernameValidator.isValid(usernameField.getText());
-        usernameErrorLabel.setVisible(!usernameField.getText().isEmpty() && !valid);
+        showError(usernameErrorLabel, !usernameField.getText().isEmpty() && !valid);
         updateLoginButtonState();
     }
 
     private void validatePassword() {
         boolean valid = PasswordValidator.isValid(passwordField.getText());
-        passwordErrorLabel.setVisible(!passwordField.getText().isEmpty() && !valid);
+        showError(passwordErrorLabel, !passwordField.getText().isEmpty() && !valid);
         updateLoginButtonState();
+    }
+
+    /**
+     * Um Label invisível ainda ocupa espaço no layout a menos que também
+     * seja marcado como "unmanaged" — por isso as duas chamadas juntas.
+     */
+    private static void showError(Label label, boolean show) {
+        label.setVisible(show);
+        label.setManaged(show);
     }
 
     private void updateLoginButtonState() {
@@ -161,6 +170,7 @@ public final class LoginController {
     private void setLoading(boolean loading) {
         this.loading = loading;
         progressIndicator.setVisible(loading);
+        progressIndicator.setManaged(loading);
         hostField.setDisable(loading);
         portField.setDisable(loading);
         usernameField.setDisable(loading);

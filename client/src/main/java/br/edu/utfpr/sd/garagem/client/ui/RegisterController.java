@@ -78,20 +78,29 @@ public final class RegisterController {
 
     private void validateUsername() {
         boolean valid = UsernameValidator.isValid(usernameField.getText());
-        usernameErrorLabel.setVisible(!usernameField.getText().isEmpty() && !valid);
+        showError(usernameErrorLabel, !usernameField.getText().isEmpty() && !valid);
         updateRegisterButtonState();
     }
 
     private void validatePassword() {
         boolean valid = PasswordValidator.isValid(passwordField.getText());
-        passwordErrorLabel.setVisible(!passwordField.getText().isEmpty() && !valid);
+        showError(passwordErrorLabel, !passwordField.getText().isEmpty() && !valid);
         updateRegisterButtonState();
     }
 
     private void validateConfirmPassword() {
         boolean matches = confirmPasswordField.getText().equals(passwordField.getText());
-        confirmPasswordErrorLabel.setVisible(!confirmPasswordField.getText().isEmpty() && !matches);
+        showError(confirmPasswordErrorLabel, !confirmPasswordField.getText().isEmpty() && !matches);
         updateRegisterButtonState();
+    }
+
+    /**
+     * Um Label invisível ainda ocupa espaço no layout a menos que também
+     * seja marcado como "unmanaged" — por isso as duas chamadas juntas.
+     */
+    private static void showError(Label label, boolean show) {
+        label.setVisible(show);
+        label.setManaged(show);
     }
 
     private void updateRegisterButtonState() {
@@ -149,6 +158,7 @@ public final class RegisterController {
     private void setLoading(boolean loading) {
         this.loading = loading;
         progressIndicator.setVisible(loading);
+        progressIndicator.setManaged(loading);
         usernameField.setDisable(loading);
         passwordField.setDisable(loading);
         confirmPasswordField.setDisable(loading);
