@@ -32,7 +32,6 @@
                     <Insets top="26" right="30" bottom="26" left="30"/>
                 </padding>
                 <Label fx:id="usernameLabel" styleClass="card-title"/>
-                <Label fx:id="tokenLabel" styleClass="field-label"/>
                 <Separator/>
                 <!-- TODO EP-2: substituir esta nota por um painel real de
                      vagas disponiveis por andar, atualizado em tempo real. -->

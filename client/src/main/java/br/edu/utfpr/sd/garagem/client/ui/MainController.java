@@ -15,9 +15,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Controller da tela principal pós-login: mostra o usuário logado e o
- * token mascarado, e trata o logout, sempre em thread de segundo plano.
- * O restante da tela é espaço reservado para o painel de vagas da EP-2.
+ * Controller da tela principal pós-login: mostra o usuário logado e trata
+ * o logout, sempre em thread de segundo plano. O token não é exibido na
+ * tela — os documentos de requisitos pedem apenas que o cliente o
+ * armazene para uso posterior (aqui, no logout). O restante da tela é
+ * espaço reservado para o painel de vagas da EP-2.
  */
 public final class MainController {
 
@@ -25,8 +27,6 @@ public final class MainController {
 
     @FXML
     private Label usernameLabel;
-    @FXML
-    private Label tokenLabel;
     @FXML
     private Label statusLabel;
     @FXML
@@ -41,15 +41,7 @@ public final class MainController {
         this.app = app;
         this.token = token;
         this.connector = connector;
-        usernameLabel.setText("Usuario: " + username);
-        tokenLabel.setText("Token: " + maskToken(token));
-    }
-
-    private static String maskToken(String token) {
-        if (token == null || token.length() <= 8) {
-            return "****";
-        }
-        return token.substring(0, 8) + "...";
+        usernameLabel.setText("Bem-vindo, " + username);
     }
 
     @FXML
