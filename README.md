@@ -92,7 +92,7 @@ Cliente (LoginController)                     Servidor (GarageServer)
 
 ## Protocolo de troca de mensagens
 
-Fonte da verdade: `docs/protocolo-de-troca-de-mensagens.xlsx` (hoje só o
+Fonte da verdade: `docs/Protocolo de Troca de Mensagens.xlsx` (hoje só o
 login está fechado). Framing: um objeto JSON por linha (newline-delimited
 JSON), UTF-8, lido com `BufferedReader.readLine()` e escrito com
 `PrintWriter` em auto-flush (ver `common.transport.MessageIO`).
@@ -109,9 +109,14 @@ Resposta de sucesso (servidor → cliente):
 {"statusCode":200,"message":"login realizado com sucesso","data":{"token":"3fa2...uuid"}}
 ```
 
-Resposta de erro (credenciais inválidas — mensagem sempre genérica):
+Resposta de erro (usuário não encontrado):
 ```json
-{"statusCode":401,"message":"usuario ou senha invalidos","data":null}
+{"statusCode":401,"message":"usuario nao encontrado","data":null}
+```
+
+Resposta de erro (senha incorreta):
+```json
+{"statusCode":401,"message":"senha incorreta","data":null}
 ```
 
 ### Logout
@@ -148,7 +153,8 @@ liberados `.` e `_`; mínimo 3, máximo 20 caracteres; sem acentuação nem
 espaços.
 
 **`password`:** letras maiúsculas, minúsculas, números e os símbolos
-`# . * & % $ @ ! ( ) - _ = +`; nenhum outro caractere é aceito.
+`# . * & % $ @ ! ( ) - _ = +`; nenhum outro caractere é aceito; mínimo 8,
+máximo 20 caracteres.
 
 Ambos implementados em `common.validation`, validados no cliente (feedback
 imediato na tela de login) e novamente no servidor (o cliente nunca é
@@ -199,9 +205,15 @@ passada como primeiro argumento de linha de comando.
   `message`/`data` na resposta), identificando a sessão pelo token.
 - **Política de sessão única:** um usuário não acumula sessões — logar de
   novo invalida a sessão anterior dele.
-- **Tamanho de `password`:** os documentos não definem mínimo/máximo nem
-  exigem obrigatoriamente todas as categorias de caractere presentes;
-  validamos apenas o conjunto de caracteres permitido.
+- **Categorias obrigatórias de `password`:** o documento de requisitos não
+  exige que todas as categorias de caractere (maiúscula/minúscula/número/
+  símbolo) estejam presentes simultaneamente; validamos o conjunto de
+  caracteres permitido e o tamanho (8 a 20).
+- **Mensagens distintas no login:** `Requisitos Funcionais e não
+  funcionais.docx` pede explicitamente mensagens diferentes para "usuário
+  não encontrado" e "senha incorreta". Implementamos assim, cientes de que
+  isso permite enumerar usernames existentes (trade-off de segurança vs.
+  seguir a especificação à risca).
 - **Persistência do último acesso da sessão:** atualizado em memória a
   cada uso do token, mas só é gravado em disco quando a sessão é criada ou
   encerrada (evita escrita a cada requisição autenticada).
