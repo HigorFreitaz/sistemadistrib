@@ -35,7 +35,7 @@ public final class ClientHandler implements Runnable {
     public void run() {
         Socket connection = this.socket;
         String remote = String.valueOf(connection.getRemoteSocketAddress());
-        listener.onLog("cliente conectado: " + remote);
+        listener.onLog("Cliente conectado: " + remote);
         try (connection;
              BufferedReader reader = MessageIO.newReader(connection.getInputStream());
              PrintWriter writer = MessageIO.newWriter(connection.getOutputStream())) {
@@ -50,7 +50,7 @@ public final class ClientHandler implements Runnable {
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "conexao encerrada com erro (" + remote + "): " + e.getMessage());
         } finally {
-            listener.onLog("cliente desconectado: " + remote);
+            listener.onLog("Cliente desconectado: " + remote);
         }
     }
 }

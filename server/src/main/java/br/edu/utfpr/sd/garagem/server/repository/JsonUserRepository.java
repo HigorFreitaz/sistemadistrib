@@ -51,7 +51,7 @@ public final class JsonUserRepository implements UserRepository {
         User admin = new User("admin", PasswordHasher.hash(DEFAULT_ADMIN_PASSWORD), UserRole.ADMIN);
         usersByUsername.put(admin.getUsername(), admin);
         persist();
-        LOGGER.warning(() -> "base de usuarios criada com o usuario administrador padrao 'admin' / senha '"
+        LOGGER.warning(() -> "Base de usuarios criada com o usuario administrador padrao 'admin' / senha '"
                 + DEFAULT_ADMIN_PASSWORD + "' -- TROQUE ESSA SENHA");
     }
 

@@ -38,11 +38,11 @@ public final class RequestDispatcher {
         try {
             envelope = JsonParser.parseString(rawLine).getAsJsonObject();
         } catch (RuntimeException e) {
-            return Response.error(StatusCode.BAD_REQUEST, "requisicao malformada");
+            return Response.error(StatusCode.BAD_REQUEST, "Requisicao malformada");
         }
         JsonElement methodElement = envelope.get("method");
         if (methodElement == null || !methodElement.isJsonPrimitive()) {
-            return Response.error(StatusCode.BAD_REQUEST, "campo method ausente");
+            return Response.error(StatusCode.BAD_REQUEST, "Campo method ausente");
         }
         String method = methodElement.getAsString();
         return switch (method) {
@@ -53,51 +53,51 @@ public final class RequestDispatcher {
             // de vagas/operacoes, CRUD admin), cada um delegando a um
             // servico proprio e reaproveitando authService.resolveSession
             // para autenticar a requisicao.
-            default -> Response.error(StatusCode.NOT_FOUND, "operacao nao suportada");
+            default -> Response.error(StatusCode.NOT_FOUND, "Operacao nao suportada");
         };
     }
 
     private Response handleLogin(JsonObject envelope) {
         LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
         if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
-            return Response.error(StatusCode.BAD_REQUEST, "usuario ou senha em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
         }
         LoginResult result = authService.login(request.getUsername(), request.getPassword());
         // mensagens distintas por caso, conforme o fluxo documentado em
         // docs/Requisitos Funcionais e nao funcionais.docx (ver LoginResult)
         return switch (result.getStatus()) {
             case SUCCESS -> onLoginSuccess(result.getSession());
-            case USER_NOT_FOUND -> Response.error(StatusCode.UNAUTHORIZED, "usuario nao encontrado");
-            case WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "senha incorreta");
+            case USER_NOT_FOUND -> Response.error(StatusCode.UNAUTHORIZED, "Usuario nao encontrado");
+            case WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Senha incorreta");
         };
     }
 
     private Response onLoginSuccess(Session session) {
         listener.onSessionCountChanged(authService.activeSessionCount());
-        return Response.ok("login realizado com sucesso", new TokenData(session.getToken()));
+        return Response.ok("Login realizado com sucesso", new TokenData(session.getToken()));
     }
 
     private Response handleLogout(JsonObject envelope) {
         LogoutRequest request = JsonSupport.GSON.fromJson(envelope, LogoutRequest.class);
         if (request.getToken() == null || request.getToken().isBlank()) {
-            return Response.error(StatusCode.BAD_REQUEST, "token nao informado");
+            return Response.error(StatusCode.BAD_REQUEST, "Token nao informado");
         }
         boolean removed = authService.logout(request.getToken());
         if (removed) {
             listener.onSessionCountChanged(authService.activeSessionCount());
-            return Response.ok("logout realizado com sucesso", null);
+            return Response.ok("Logout realizado com sucesso", null);
         }
-        return Response.error(StatusCode.UNAUTHORIZED, "token invalido ou sessao inexistente");
+        return Response.error(StatusCode.UNAUTHORIZED, "Token invalido ou sessao inexistente");
     }
 
     private Response handleRegister(JsonObject envelope) {
         RegisterRequest request = JsonSupport.GSON.fromJson(envelope, RegisterRequest.class);
         if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
-            return Response.error(StatusCode.BAD_REQUEST, "usuario ou senha em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
         }
         boolean created = authService.register(request.getUsername(), request.getPassword());
         return created
-                ? Response.ok("cadastro realizado com sucesso", null)
-                : Response.error(StatusCode.CONFLICT, "usuario ja cadastrado");
+                ? Response.ok("Cadastro realizado com sucesso", null)
+                : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
     }
 }

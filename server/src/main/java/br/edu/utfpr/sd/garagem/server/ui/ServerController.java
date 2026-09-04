@@ -64,7 +64,7 @@ public final class ServerController implements ServerEventListener {
         try {
             port = Integer.parseInt(portField.getText().trim());
         } catch (NumberFormatException e) {
-            appendLog("porta invalida: " + portField.getText());
+            appendLog("Porta invalida: " + portField.getText());
             return;
         }
         UserRepository userRepository = new JsonUserRepository(USERS_FILE);
@@ -76,7 +76,7 @@ public final class ServerController implements ServerEventListener {
             server.start();
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "falha ao iniciar o servidor", e);
-            appendLog("falha ao iniciar o servidor: " + e.getMessage());
+            appendLog("Falha ao iniciar o servidor: " + e.getMessage());
         }
     }
 
@@ -101,7 +101,7 @@ public final class ServerController implements ServerEventListener {
             startButton.setDisable(true);
             stopButton.setDisable(false);
             portField.setDisable(true);
-            appendLog("servidor iniciado na porta " + port);
+            appendLog("Servidor iniciado na porta " + port);
         });
     }
 
@@ -113,7 +113,7 @@ public final class ServerController implements ServerEventListener {
             stopButton.setDisable(true);
             portField.setDisable(false);
             connectedClientsLabel.setText("0");
-            appendLog("servidor parado");
+            appendLog("Servidor parado");
         });
     }
 
