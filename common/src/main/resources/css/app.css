@@ -4,14 +4,6 @@
     -fx-font-size: 13px;
 }
 
-/* ---- scrollpane transparente (usado para o conteudo central poder
-       rolar em janelas pequenas, sem aparecer como uma caixa por cima
-       do fundo) ---- */
-.transparent-scroll,
-.transparent-scroll > .viewport {
-    -fx-background-color: transparent;
-}
-
 /* ---- cabecalho ---- */
 .header-bar {
     -fx-background-color: linear-gradient(to right, #24345C, #3A6FF7);
@@ -121,6 +113,39 @@
     -fx-padding: 5 14;
     -fx-font-weight: bold;
     -fx-font-size: 12px;
+}
+
+/* ---- barra de ferramentas e estatisticas (servidor) ---- */
+.toolbar {
+    -fx-background-color: white;
+    -fx-padding: 12 26;
+    -fx-border-color: #E1E6EE transparent transparent transparent;
+    -fx-border-width: 1;
+}
+.stats-bar {
+    -fx-background-color: #F7F9FC;
+    -fx-padding: 14 26;
+}
+.stat-tile {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-padding: 10 20;
+    -fx-effect: dropshadow(gaussian, rgba(20,30,60,0.10), 8, 0, 0, 2);
+}
+.stat-tile-label {
+    -fx-text-fill: #7A8499;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+.stat-tile-value {
+    -fx-text-fill: #21283B;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+.section-title {
+    -fx-text-fill: #55607A;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
 }
 
 /* ---- area de log (servidor) ---- */
