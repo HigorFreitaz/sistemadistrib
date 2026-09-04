@@ -107,17 +107,17 @@ Requisição (cliente → servidor):
 
 Resposta de sucesso (servidor → cliente):
 ```json
-{"statusCode":200,"message":"login realizado com sucesso","data":{"token":"3fa2...uuid"}}
+{"statusCode":200,"message":"Login realizado com sucesso","data":{"token":"3fa2...uuid"}}
 ```
 
 Resposta de erro (usuário não encontrado):
 ```json
-{"statusCode":401,"message":"usuario nao encontrado","data":null}
+{"statusCode":401,"message":"Usuario nao encontrado","data":null}
 ```
 
 Resposta de erro (senha incorreta):
 ```json
-{"statusCode":401,"message":"senha incorreta","data":null}
+{"statusCode":401,"message":"Senha incorreta","data":null}
 ```
 
 ### Cadastro
@@ -134,12 +134,12 @@ Requisição (cliente → servidor):
 
 Resposta de sucesso:
 ```json
-{"statusCode":200,"message":"cadastro realizado com sucesso","data":null}
+{"statusCode":200,"message":"Cadastro realizado com sucesso","data":null}
 ```
 
 Resposta de erro (username já cadastrado):
 ```json
-{"statusCode":409,"message":"usuario ja cadastrado","data":null}
+{"statusCode":409,"message":"Usuario ja cadastrado","data":null}
 ```
 
 ### Logout
@@ -154,12 +154,12 @@ Requisição (cliente → servidor):
 
 Resposta de sucesso:
 ```json
-{"statusCode":200,"message":"logout realizado com sucesso","data":null}
+{"statusCode":200,"message":"Logout realizado com sucesso","data":null}
 ```
 
 Resposta de erro (token inválido ou inexistente):
 ```json
-{"statusCode":401,"message":"token invalido ou sessao inexistente","data":null}
+{"statusCode":401,"message":"Token invalido ou sessao inexistente","data":null}
 ```
 
 ### Códigos de status
@@ -180,8 +180,9 @@ espaços.
 máximo 20 caracteres.
 
 Ambos implementados em `common.validation`, validados no cliente (feedback
-imediato na tela de login) e novamente no servidor (o cliente nunca é
-confiável), com testes JUnit 5 cobrindo os casos de borda.
+imediato na tela de cadastro, como um checklist) e novamente no servidor
+(o cliente nunca é confiável), com testes JUnit 5 cobrindo os casos de
+borda.
 
 ## Como rodar no IntelliJ IDEA Ultimate
 
@@ -238,15 +239,28 @@ JBR que acompanha o IntelliJ IDEA instalado na máquina.
   mesma convenção de `login`/`logout`.
 - **Política de sessão única:** um usuário não acumula sessões — logar de
   novo invalida a sessão anterior dele.
+- **Capitalização de `message`:** o requisito de minúsculas obrigatórias
+  vale só para o valor de `method` (é explícito no documento). O texto de
+  `message` é para leitura humana, então começa com maiúscula — igual ao
+  resto dos textos da interface.
 - **Categorias obrigatórias de `password`:** o documento de requisitos não
   exige que todas as categorias de caractere (maiúscula/minúscula/número/
   símbolo) estejam presentes simultaneamente; validamos o conjunto de
   caracteres permitido e o tamanho (8 a 20).
-- **Mensagens distintas no login:** `Requisitos Funcionais e não
-  funcionais.docx` pede explicitamente mensagens diferentes para "usuário
-  não encontrado" e "senha incorreta". Implementamos assim, cientes de que
-  isso permite enumerar usernames existentes (trade-off de segurança vs.
-  seguir a especificação à risca).
+- **Mensagens distintas no login, só no servidor:** `Requisitos Funcionais
+  e não funcionais.docx` pede explicitamente mensagens diferentes para
+  "usuário não encontrado" e "senha incorreta", e o servidor devolve
+  exatamente isso no campo `message`. O cliente, porém, nunca repassa essa
+  mensagem ao usuário: qualquer login que não dê certo (usuário, senha ou
+  os dois) aparece como a mesma notificação genérica "Usuário e/ou senha
+  incorretos.", para não deixar visível qual dos dois campos errou.
+- **Sem validação de formato em tempo real no login:** ao contrário do
+  cadastro (que mostra um checklist ao vivo, útil para criar uma senha
+  nova), o login não valida usuário/senha enquanto o usuário digita —
+  são credenciais que já existem, e reagir a cada tecla digitada só
+  daria pistas sobre a política de senha sem necessidade. O formato é
+  responsabilidade do servidor; qualquer erro vira a mesma notificação
+  genérica de credenciais inválidas.
 - **Persistência do último acesso da sessão:** atualizado em memória a
   cada uso do token, mas só é gravado em disco quando a sessão é criada ou
   encerrada (evita escrita a cada requisição autenticada).
