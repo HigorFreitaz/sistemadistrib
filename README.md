@@ -45,13 +45,14 @@ sd-garagem/            (pom pai, packaging pom)
 - **common**: `model` (User, UserRole, Session), `protocol` (LoginRequest,
   LogoutRequest, RegisterRequest, Response, TokenData, StatusCode,
   Methods), `validation` (UsernameValidator, PasswordValidator), `json`
-  (configuração do Gson) e `transport` (framing de linha JSON em UTF-8).
+  (configuração do Gson), `transport` (framing de linha JSON em UTF-8) e
+  `css` (folha de estilo compartilhada pelas GUIs de cliente e servidor).
 - **server**: `config` (porta), `security` (hash PBKDF2), `repository`
   (persistência JSON com escrita atômica), `service` (AuthService,
   SessionService, LoginResult), `net` (GarageServer, ClientHandler,
   RequestDispatcher), `log` (mascaramento de senha), `ui` (GUI JavaFX).
 - **client**: `net` (SocketConnector), `ui` (ClienteApp, LoginController,
-  RegisterController, MainController) + FXML + `css` (folha de estilo).
+  RegisterController, MainController) + FXML.
 
 ### Fluxo de login (diagrama)
 
@@ -215,14 +216,13 @@ cd client && ../mvnw javafx:run
 A porta do servidor pode ser trocada em `server/server.properties` ou
 passada como primeiro argumento de linha de comando.
 
-### Atalho: `servidor.cmd` e `cliente.cmd`
+### Atalho: `iniciar.cmd`
 
-Para não precisar abrir terminal nem IntelliJ, dois lançadores Windows
-ficam na raiz do repositório: dê dois cliques em `servidor.cmd` para
-ligar o servidor, e em `cliente.cmd` para abrir o cliente. Cada um só
-entra na pasta do módulo certo e chama `mvnw javafx:run` — se
-`JAVA_HOME` não estiver definido no sistema, usam como alternativa o JBR
-que acompanha o IntelliJ IDEA instalado na máquina.
+Para não precisar abrir terminal nem IntelliJ, um lançador único fica na
+raiz do repositório: dois cliques em `iniciar.cmd` abrem o servidor e o
+cliente ao mesmo tempo, cada um na sua própria janela de console. Se
+`JAVA_HOME` não estiver definido no sistema, ele usa como alternativa o
+JBR que acompanha o IntelliJ IDEA instalado na máquina.
 
 ## Suposições a validar com a turma
 
