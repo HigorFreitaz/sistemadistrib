@@ -71,4 +71,17 @@ class PasswordValidatorTest {
     void rejeitaSimboloNaoPermitidoBarra() {
         assertFalse(PasswordValidator.isValid("Senha123/"));
     }
+
+    @Test
+    void hasValidLengthIgnoraCaracteresInvalidos() {
+        assertTrue(PasswordValidator.hasValidLength("~~~~~~~~"));
+        assertFalse(PasswordValidator.hasValidLength("~~~~~~"));
+    }
+
+    @Test
+    void hasOnlyAllowedCharactersIgnoraTamanho() {
+        assertTrue(PasswordValidator.hasOnlyAllowedCharacters("Ab1"));
+        assertFalse(PasswordValidator.hasOnlyAllowedCharacters("Ab1~"));
+        assertFalse(PasswordValidator.hasOnlyAllowedCharacters(""));
+    }
 }

@@ -70,4 +70,17 @@ class UsernameValidatorTest {
     void rejeitaSimboloNaoPermitido() {
         assertFalse(UsernameValidator.isValid("usuario-01"));
     }
+
+    @Test
+    void hasValidLengthIgnoraCaracteresInvalidos() {
+        assertTrue(UsernameValidator.hasValidLength("ABC"));
+        assertFalse(UsernameValidator.hasValidLength("AB"));
+    }
+
+    @Test
+    void hasOnlyAllowedCharactersIgnoraTamanho() {
+        assertTrue(UsernameValidator.hasOnlyAllowedCharacters("ab"));
+        assertFalse(UsernameValidator.hasOnlyAllowedCharacters("AB"));
+        assertFalse(UsernameValidator.hasOnlyAllowedCharacters(""));
+    }
 }
