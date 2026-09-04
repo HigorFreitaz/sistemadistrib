@@ -4,6 +4,14 @@
     -fx-font-size: 13px;
 }
 
+/* ---- scrollpane transparente (usado para o conteudo central poder
+       rolar em janelas pequenas, sem aparecer como uma caixa por cima
+       do fundo) ---- */
+.transparent-scroll,
+.transparent-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
 /* ---- cabecalho ---- */
 .header-bar {
     -fx-background-color: linear-gradient(to right, #24345C, #3A6FF7);

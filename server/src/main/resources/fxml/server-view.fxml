@@ -5,7 +5,7 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
@@ -14,23 +14,23 @@
             stylesheets="@../css/app.css">
     <top>
         <VBox styleClass="header-bar" spacing="12">
-            <HBox alignment="CENTER_LEFT" spacing="12">
-                <VBox spacing="4" HBox.hgrow="ALWAYS">
+            <FlowPane hgap="12" vgap="8" alignment="CENTER_LEFT">
+                <VBox spacing="4" minWidth="220">
                     <Label text="SD Garagem" styleClass="app-title-on-dark"/>
                     <Label text="Painel do Servidor" styleClass="app-subtitle-on-dark"/>
                 </VBox>
                 <Label fx:id="statusLabel" text="Parado" styleClass="status-pill-offline"/>
-            </HBox>
-            <HBox spacing="10" alignment="CENTER_LEFT">
+            </FlowPane>
+            <FlowPane hgap="10" vgap="8" alignment="CENTER_LEFT">
                 <Label text="Porta:" styleClass="app-subtitle-on-dark"/>
                 <TextField fx:id="portField" prefWidth="80"/>
-                <Button fx:id="startButton" text="Iniciar" onAction="#handleStart" styleClass="button-primary"/>
+                <Button fx:id="startButton" text="Iniciar" onAction="#handleStart" defaultButton="true" styleClass="button-primary"/>
                 <Button fx:id="stopButton" text="Parar" onAction="#handleStop" styleClass="button-secondary-on-dark"/>
-            </HBox>
-            <HBox spacing="24">
+            </FlowPane>
+            <FlowPane hgap="24" vgap="4">
                 <Label fx:id="connectedClientsLabel" text="Clientes conectados: 0" styleClass="app-subtitle-on-dark"/>
                 <Label fx:id="activeSessionsLabel" text="Sessoes ativas: 0" styleClass="app-subtitle-on-dark"/>
-            </HBox>
+            </FlowPane>
         </VBox>
     </top>
     <center>

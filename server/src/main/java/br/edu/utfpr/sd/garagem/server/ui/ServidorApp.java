@@ -28,6 +28,8 @@ public final class ServidorApp extends Application {
         controller.init(properties);
 
         primaryStage.setTitle("SD Garagem - Servidor");
+        primaryStage.setMinWidth(480);
+        primaryStage.setMinHeight(360);
         primaryStage.setScene(new Scene(root, 720, 480));
         primaryStage.setOnCloseRequest(event -> controller.shutdown());
         primaryStage.show();
