@@ -2,6 +2,7 @@ package br.edu.utfpr.sd.garagem.server.service;
 
 import br.edu.utfpr.sd.garagem.common.model.Session;
 import br.edu.utfpr.sd.garagem.common.model.User;
+import br.edu.utfpr.sd.garagem.common.model.UserRole;
 import br.edu.utfpr.sd.garagem.server.repository.UserRepository;
 import br.edu.utfpr.sd.garagem.server.security.PasswordHasher;
 
@@ -35,6 +36,15 @@ public final class AuthService {
             return LoginResult.wrongPassword();
         }
         return LoginResult.success(sessionService.login(user.get().getUsername()));
+    }
+
+    /**
+     * Cadastra um novo usuário com o papel padrão {@link UserRole#CLIENTE}.
+     * @return {@code true} se o cadastro foi criado; {@code false} se o username já estava em uso.
+     */
+    public boolean register(String username, String password) {
+        User user = new User(username, PasswordHasher.hash(password), UserRole.CLIENTE);
+        return userRepository.save(user);
     }
 
     /** Encerra a sessão associada ao token, se existir. */

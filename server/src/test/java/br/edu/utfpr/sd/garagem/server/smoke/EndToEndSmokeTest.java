@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EndToEndSmokeTest {
 
     private static final int PORT = 18765;
+    private static final int REGISTER_PORT = 18766;
 
     private static class NoOpListener implements ServerEventListener {
         @Override public void onStarted(int port) { }
@@ -49,15 +50,15 @@ class EndToEndSmokeTest {
         GarageServer server = new GarageServer(PORT, dispatcher, new NoOpListener());
         server.start();
         try {
-            String token = doLogin("admin", "Admin@123", StatusCode.OK);
+            String token = doLogin(PORT, "admin", "Admin@123", StatusCode.OK);
             assertNotNull(token);
             assertTrue(!token.isBlank());
 
-            doLogin("admin", "senhaErrada9", StatusCode.UNAUTHORIZED);
-            doLogin("usuarioinexistente", "qualquerSenha123", StatusCode.UNAUTHORIZED);
+            doLogin(PORT, "admin", "senhaErrada9", StatusCode.UNAUTHORIZED);
+            doLogin(PORT, "usuarioinexistente", "qualquerSenha123", StatusCode.UNAUTHORIZED);
 
-            doLogout(token, StatusCode.OK);
-            doLogout(token, StatusCode.UNAUTHORIZED);
+            doLogout(PORT, token, StatusCode.OK);
+            doLogout(PORT, token, StatusCode.UNAUTHORIZED);
         } finally {
             server.stop();
         }
@@ -66,9 +67,31 @@ class EndToEndSmokeTest {
         assertThrows(ConnectException.class, () -> new Socket().connect(new InetSocketAddress("localhost", PORT), 1000));
     }
 
-    private String doLogin(String username, String password, int expectedStatus) throws Exception {
+    @Test
+    void cadastraNovoUsuarioELoga() throws Exception {
+        Path dir = Files.createTempDirectory("sdgaragem-smoke-cadastro");
+        JsonUserRepository users = new JsonUserRepository(dir.resolve("usuarios.json"));
+        SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
+        AuthService auth = new AuthService(users, sessions);
+        RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
+        GarageServer server = new GarageServer(REGISTER_PORT, dispatcher, new NoOpListener());
+        server.start();
+        try {
+            doRegister(REGISTER_PORT, "novo.usuario", "SenhaForte9", StatusCode.OK);
+            doRegister(REGISTER_PORT, "novo.usuario", "OutraSenha9", StatusCode.CONFLICT);
+
+            String token = doLogin(REGISTER_PORT, "novo.usuario", "SenhaForte9", StatusCode.OK);
+            assertNotNull(token);
+
+            doLogout(REGISTER_PORT, token, StatusCode.OK);
+        } finally {
+            server.stop();
+        }
+    }
+
+    private String doLogin(int port, String username, String password, int expectedStatus) throws Exception {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("localhost", PORT), 3000);
+            socket.connect(new InetSocketAddress("localhost", port), 3000);
             try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
                  PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
                 String json = "{\"method\":\"login\",\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
@@ -84,12 +107,26 @@ class EndToEndSmokeTest {
         }
     }
 
-    private void doLogout(String token, int expectedStatus) throws Exception {
+    private void doLogout(int port, String token, int expectedStatus) throws Exception {
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("localhost", PORT), 3000);
+            socket.connect(new InetSocketAddress("localhost", port), 3000);
             try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
                  PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
                 String json = "{\"method\":\"logout\",\"token\":\"" + token + "\"}";
+                writer.println(json);
+                String line = reader.readLine();
+                Response response = JsonSupport.GSON.fromJson(line, Response.class);
+                assertEquals(expectedStatus, response.getStatusCode(), "resposta: " + line);
+            }
+        }
+    }
+
+    private void doRegister(int port, String username, String password, int expectedStatus) throws Exception {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("localhost", port), 3000);
+            try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
+                 PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
+                String json = "{\"method\":\"register\",\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
                 writer.println(json);
                 String line = reader.readLine();
                 Response response = JsonSupport.GSON.fromJson(line, Response.class);

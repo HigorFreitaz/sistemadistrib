@@ -13,9 +13,12 @@ public final class Methods {
     /** Encerra a sessão associada a um token. */
     public static final String LOGOUT = "logout";
 
-    // TODO EP-2: adicionar aqui os demais methods do protocolo (cadastro de
-    // usuario, CRUD de vagas/operacoes, CRUD admin) assim que forem
-    // definidos por Nathan e Rafael na planilha de protocolo.
+    /** Cadastra um novo usuário. */
+    public static final String REGISTER = "register";
+
+    // TODO EP-2: adicionar aqui os demais methods do protocolo (CRUD de
+    // vagas/operacoes, CRUD admin) assim que forem definidos por Nathan e
+    // Rafael na planilha de protocolo.
 
     private Methods() {
     }

@@ -64,4 +64,24 @@ public final class JsonUserRepository implements UserRepository {
     public Optional<User> findByUsername(String username) {
         return Optional.ofNullable(usersByUsername.get(username));
     }
+
+    /**
+     * Verificação de existência e inserção precisam ser atômicas entre si
+     * (região crítica), senão duas requisições de cadastro concorrentes
+     * para o mesmo username poderiam passar as duas.
+     */
+    @Override
+    public synchronized boolean save(User user) {
+        if (usersByUsername.containsKey(user.getUsername())) {
+            return false;
+        }
+        usersByUsername.put(user.getUsername(), user);
+        try {
+            persist();
+            return true;
+        } catch (IOException e) {
+            usersByUsername.remove(user.getUsername());
+            throw new IllegalStateException("nao foi possivel salvar o usuario " + user.getUsername(), e);
+        }
+    }
 }

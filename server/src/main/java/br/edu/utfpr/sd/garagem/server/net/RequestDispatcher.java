@@ -5,6 +5,7 @@ import br.edu.utfpr.sd.garagem.common.model.Session;
 import br.edu.utfpr.sd.garagem.common.protocol.LoginRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Methods;
+import br.edu.utfpr.sd.garagem.common.protocol.RegisterRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
@@ -47,10 +48,11 @@ public final class RequestDispatcher {
         return switch (method) {
             case Methods.LOGIN -> handleLogin(envelope);
             case Methods.LOGOUT -> handleLogout(envelope);
-            // TODO EP-2: registrar aqui os demais methods do protocolo (cadastro
-            // de usuario, CRUD de vagas/operacoes, CRUD admin), cada um
-            // delegando a um servico proprio e reaproveitando
-            // authService.resolveSession para autenticar a requisicao.
+            case Methods.REGISTER -> handleRegister(envelope);
+            // TODO EP-2: registrar aqui os demais methods do protocolo (CRUD
+            // de vagas/operacoes, CRUD admin), cada um delegando a um
+            // servico proprio e reaproveitando authService.resolveSession
+            // para autenticar a requisicao.
             default -> Response.error(StatusCode.NOT_FOUND, "operacao nao suportada");
         };
     }
@@ -86,5 +88,16 @@ public final class RequestDispatcher {
             return Response.ok("logout realizado com sucesso", null);
         }
         return Response.error(StatusCode.UNAUTHORIZED, "token invalido ou sessao inexistente");
+    }
+
+    private Response handleRegister(JsonObject envelope) {
+        RegisterRequest request = JsonSupport.GSON.fromJson(envelope, RegisterRequest.class);
+        if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
+            return Response.error(StatusCode.BAD_REQUEST, "usuario ou senha em formato invalido");
+        }
+        boolean created = authService.register(request.getUsername(), request.getPassword());
+        return created
+                ? Response.ok("cadastro realizado com sucesso", null)
+                : Response.error(StatusCode.CONFLICT, "usuario ja cadastrado");
     }
 }
