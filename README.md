@@ -23,14 +23,14 @@ EP-2 vai usar para proteger a contagem de vagas.
 ## Escopo desta entrega (EP-1)
 
 Implementado: estrutura Maven multi-módulo, JavaFX no cliente e no
-servidor, comunicação por sockets TCP com JSON, login e logout ponta a
-ponta, persistência de usuários e sessões em arquivos JSON, GUI mínima em
-ambos os lados, e os validadores de `username`/`password` com testes
-unitários.
+servidor, comunicação por sockets TCP com JSON, login, logout e cadastro
+de usuário ponta a ponta, persistência de usuários e sessões em arquivos
+JSON, GUI no cliente e no servidor, e os validadores de `username`/
+`password` com testes unitários.
 
-**Fora do escopo** (ver "Próximas entregas"): CRUD de usuários, CRUD de
-vagas/operações, perfil ADM. Os pontos de extensão estão marcados no
-código com `// TODO EP-2:`.
+**Fora do escopo** (ver "Próximas entregas"): consulta/atualização/exclusão
+de cadastro, CRUD de vagas/operações, perfil ADM. Os pontos de extensão
+estão marcados no código com `// TODO EP-2:`.
 
 ## Arquitetura
 
@@ -43,15 +43,15 @@ sd-garagem/            (pom pai, packaging pom)
 ```
 
 - **common**: `model` (User, UserRole, Session), `protocol` (LoginRequest,
-  LogoutRequest, Response, TokenData, StatusCode, Methods), `validation`
-  (UsernameValidator, PasswordValidator), `json` (configuração do Gson) e
-  `transport` (framing de linha JSON em UTF-8).
+  LogoutRequest, RegisterRequest, Response, TokenData, StatusCode,
+  Methods), `validation` (UsernameValidator, PasswordValidator), `json`
+  (configuração do Gson) e `transport` (framing de linha JSON em UTF-8).
 - **server**: `config` (porta), `security` (hash PBKDF2), `repository`
   (persistência JSON com escrita atômica), `service` (AuthService,
-  SessionService), `net` (GarageServer, ClientHandler, RequestDispatcher),
-  `log` (mascaramento de senha), `ui` (GUI JavaFX).
+  SessionService, LoginResult), `net` (GarageServer, ClientHandler,
+  RequestDispatcher), `log` (mascaramento de senha), `ui` (GUI JavaFX).
 - **client**: `net` (SocketConnector), `ui` (ClienteApp, LoginController,
-  MainController) + FXML.
+  RegisterController, MainController) + FXML + `css` (folha de estilo).
 
 ### Fluxo de login (diagrama)
 
@@ -119,6 +119,28 @@ Resposta de erro (senha incorreta):
 {"statusCode":401,"message":"senha incorreta","data":null}
 ```
 
+### Cadastro
+
+Formato ainda não definido na planilha; implementado seguindo o fluxo
+descrito em `docs/Requisitos Funcionais e não funcionais.docx` e o mesmo
+padrão estrutural do login (ver seção de suposições abaixo). Não abre
+sessão — o usuário precisa logar separadamente depois de se cadastrar.
+
+Requisição (cliente → servidor):
+```json
+{"method":"register","username":"novo.usuario","password":"SenhaForte9"}
+```
+
+Resposta de sucesso:
+```json
+{"statusCode":200,"message":"cadastro realizado com sucesso","data":null}
+```
+
+Resposta de erro (username já cadastrado):
+```json
+{"statusCode":409,"message":"usuario ja cadastrado","data":null}
+```
+
 ### Logout
 
 Formato ainda não definido na planilha; implementado seguindo o mesmo
@@ -144,7 +166,7 @@ Resposta de erro (token inválido ou inexistente):
 Centralizados em `common.protocol.StatusCode`, com semântica inspirada em
 HTTP: `200` sucesso, `400` requisição malformada/validação, `401`
 credenciais ou token inválidos, `404` operação não suportada, `409`
-conflito (reservado para EP-2), `500` erro interno.
+conflito (ex.: username já cadastrado), `500` erro interno.
 
 ## Requisitos não funcionais de validação
 
@@ -193,6 +215,15 @@ cd client && ../mvnw javafx:run
 A porta do servidor pode ser trocada em `server/server.properties` ou
 passada como primeiro argumento de linha de comando.
 
+### Atalho: `servidor.cmd` e `cliente.cmd`
+
+Para não precisar abrir terminal nem IntelliJ, dois lançadores Windows
+ficam na raiz do repositório: dê dois cliques em `servidor.cmd` para
+ligar o servidor, e em `cliente.cmd` para abrir o cliente. Cada um só
+entra na pasta do módulo certo e chama `mvnw javafx:run` — se
+`JAVA_HOME` não estiver definido no sistema, usam como alternativa o JBR
+que acompanha o IntelliJ IDEA instalado na máquina.
+
 ## Suposições a validar com a turma
 
 - **Framing:** um objeto JSON por linha (newline-delimited), UTF-8. Opção
@@ -200,9 +231,11 @@ passada como primeiro argumento de linha de comando.
   diferentes.
 - **Valores de `statusCode`:** a planilha não fixa esses números; usamos
   semântica HTTP, centralizada em `StatusCode`, fácil de renegociar.
-- **Formato do `logout`:** ainda não está na planilha; seguimos o mesmo
-  padrão estrutural do login (`method` na requisição, `statusCode`/
-  `message`/`data` na resposta), identificando a sessão pelo token.
+- **Formato do `logout` e do `register`:** nenhum dos dois está na
+  planilha; seguimos o mesmo padrão estrutural do login (`method` na
+  requisição, `statusCode`/`message`/`data` na resposta). O nome do
+  method de cadastro (`register`) foi escolhido em inglês, seguindo a
+  mesma convenção de `login`/`logout`.
 - **Política de sessão única:** um usuário não acumula sessões — logar de
   novo invalida a sessão anterior dele.
 - **Categorias obrigatórias de `password`:** o documento de requisitos não
@@ -222,12 +255,20 @@ passada como primeiro argumento de linha de comando.
 - **Diretório de dados e `server.properties`:** ambos relativos ao
   diretório de trabalho do processo (não empacotados como recurso), para
   poderem ser editados sem recompilar.
+- **Papel do cadastro via `register`:** todo usuário cadastrado por esse
+  method nasce com papel `CLIENTE`; não há como criar um ADM pelo
+  protocolo nesta entrega (o único ADM é o `admin` da seed inicial).
+- **Cadastro não abre sessão:** depois de cadastrar, o cliente volta para
+  a tela de login (com o username já preenchido) em vez de logar
+  automaticamente — mantém cadastro e login como passos separados, como
+  descrito no documento de requisitos.
 
 ## Próximas entregas
 
 **EP-2** (marcado no código com `// TODO EP-2:`):
-- Demais `methods` do protocolo (cadastro de usuário, CRUD de vagas/
-  operações, CRUD admin), assim que Nathan e Rafael fecharem a planilha.
+- Demais `methods` do protocolo (consulta/atualização/exclusão de
+  cadastro, CRUD de vagas/operações, CRUD admin), assim que Nathan e
+  Rafael fecharem a planilha.
 - Painel de vagas disponíveis por andar na tela principal do cliente.
 - A região crítica da contagem de vagas, usando o mesmo padrão de
   isolamento já usado em `SessionService` (criação/remoção de sessão).
