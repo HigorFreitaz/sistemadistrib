@@ -27,10 +27,13 @@ public final class ServidorApp extends Application {
         ServerController controller = loader.getController();
         controller.init(properties);
 
+        Scene scene = new Scene(root, 760, 520);
+        scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+
         primaryStage.setTitle("SD Garagem - Servidor");
-        primaryStage.setMinWidth(480);
-        primaryStage.setMinHeight(360);
-        primaryStage.setScene(new Scene(root, 720, 480));
+        primaryStage.setMinWidth(520);
+        primaryStage.setMinHeight(420);
+        primaryStage.setScene(scene);
         primaryStage.setOnCloseRequest(event -> controller.shutdown());
         primaryStage.show();
     }

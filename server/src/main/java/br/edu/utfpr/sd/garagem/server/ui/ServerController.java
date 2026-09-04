@@ -112,7 +112,7 @@ public final class ServerController implements ServerEventListener {
             startButton.setDisable(false);
             stopButton.setDisable(true);
             portField.setDisable(false);
-            connectedClientsLabel.setText("Clientes conectados: 0");
+            connectedClientsLabel.setText("0");
             appendLog("servidor parado");
         });
     }
@@ -124,12 +124,12 @@ public final class ServerController implements ServerEventListener {
 
     @Override
     public void onClientCountChanged(int connectedClients) {
-        Platform.runLater(() -> connectedClientsLabel.setText("Clientes conectados: " + connectedClients));
+        Platform.runLater(() -> connectedClientsLabel.setText(String.valueOf(connectedClients)));
     }
 
     @Override
     public void onSessionCountChanged(int activeSessions) {
-        Platform.runLater(() -> activeSessionsLabel.setText("Sessoes ativas: " + activeSessions));
+        Platform.runLater(() -> activeSessionsLabel.setText(String.valueOf(activeSessions)));
     }
 
     @Override
