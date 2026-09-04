@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
@@ -11,27 +10,30 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="br.edu.utfpr.sd.garagem.server.ui.ServerController">
+            fx:controller="br.edu.utfpr.sd.garagem.server.ui.ServerController"
+            stylesheets="@../css/app.css">
     <top>
-        <VBox spacing="10">
-            <padding>
-                <Insets top="10" right="10" bottom="10" left="10"/>
-            </padding>
-            <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Porta:"/>
-                <TextField fx:id="portField" prefWidth="80"/>
-                <Button fx:id="startButton" text="Iniciar" onAction="#handleStart"/>
-                <Button fx:id="stopButton" text="Parar" onAction="#handleStop"/>
-                <Label text="Status:"/>
-                <Label fx:id="statusLabel" text="Parado"/>
+        <VBox styleClass="header-bar" spacing="12">
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="SD Garagem" styleClass="app-title-on-dark"/>
+                    <Label text="Painel do Servidor" styleClass="app-subtitle-on-dark"/>
+                </VBox>
+                <Label fx:id="statusLabel" text="Parado" styleClass="status-pill-offline"/>
             </HBox>
-            <HBox spacing="20" alignment="CENTER_LEFT">
-                <Label fx:id="connectedClientsLabel" text="Clientes conectados: 0"/>
-                <Label fx:id="activeSessionsLabel" text="Sessoes ativas: 0"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Porta:" styleClass="app-subtitle-on-dark"/>
+                <TextField fx:id="portField" prefWidth="80"/>
+                <Button fx:id="startButton" text="Iniciar" onAction="#handleStart" styleClass="button-primary"/>
+                <Button fx:id="stopButton" text="Parar" onAction="#handleStop" styleClass="button-secondary-on-dark"/>
+            </HBox>
+            <HBox spacing="24">
+                <Label fx:id="connectedClientsLabel" text="Clientes conectados: 0" styleClass="app-subtitle-on-dark"/>
+                <Label fx:id="activeSessionsLabel" text="Sessoes ativas: 0" styleClass="app-subtitle-on-dark"/>
             </HBox>
         </VBox>
     </top>
     <center>
-        <TextArea fx:id="logArea" editable="false" wrapText="true"/>
+        <TextArea fx:id="logArea" editable="false" wrapText="true" styleClass="log-area"/>
     </center>
 </BorderPane>

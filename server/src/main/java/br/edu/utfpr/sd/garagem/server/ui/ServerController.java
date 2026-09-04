@@ -97,7 +97,7 @@ public final class ServerController implements ServerEventListener {
     @Override
     public void onStarted(int port) {
         Platform.runLater(() -> {
-            statusLabel.setText("Escutando na porta " + port);
+            setStatusPill("Escutando na porta " + port, true);
             startButton.setDisable(true);
             stopButton.setDisable(false);
             portField.setDisable(true);
@@ -108,13 +108,18 @@ public final class ServerController implements ServerEventListener {
     @Override
     public void onStopped() {
         Platform.runLater(() -> {
-            statusLabel.setText("Parado");
+            setStatusPill("Parado", false);
             startButton.setDisable(false);
             stopButton.setDisable(true);
             portField.setDisable(false);
             connectedClientsLabel.setText("Clientes conectados: 0");
             appendLog("servidor parado");
         });
+    }
+
+    private void setStatusPill(String text, boolean online) {
+        statusLabel.setText(text);
+        statusLabel.getStyleClass().setAll(online ? "status-pill-online" : "status-pill-offline");
     }
 
     @Override
