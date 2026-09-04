@@ -11,6 +11,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
 import br.edu.utfpr.sd.garagem.common.validation.PasswordValidator;
 import br.edu.utfpr.sd.garagem.common.validation.UsernameValidator;
 import br.edu.utfpr.sd.garagem.server.service.AuthService;
+import br.edu.utfpr.sd.garagem.server.service.LoginResult;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -59,10 +60,14 @@ public final class RequestDispatcher {
         if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
             return Response.error(StatusCode.BAD_REQUEST, "usuario ou senha em formato invalido");
         }
-        return authService.login(request.getUsername(), request.getPassword())
-                .map(this::onLoginSuccess)
-                // mensagem generica: nunca revela se o erro foi no usuario ou na senha
-                .orElseGet(() -> Response.error(StatusCode.UNAUTHORIZED, "usuario ou senha invalidos"));
+        LoginResult result = authService.login(request.getUsername(), request.getPassword());
+        // mensagens distintas por caso, conforme o fluxo documentado em
+        // docs/Requisitos Funcionais e nao funcionais.docx (ver LoginResult)
+        return switch (result.getStatus()) {
+            case SUCCESS -> onLoginSuccess(result.getSession());
+            case USER_NOT_FOUND -> Response.error(StatusCode.UNAUTHORIZED, "usuario nao encontrado");
+            case WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "senha incorreta");
+        };
     }
 
     private Response onLoginSuccess(Session session) {

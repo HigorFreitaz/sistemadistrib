@@ -1,6 +1,7 @@
 package br.edu.utfpr.sd.garagem.server.service;
 
 import br.edu.utfpr.sd.garagem.common.model.Session;
+import br.edu.utfpr.sd.garagem.common.model.User;
 import br.edu.utfpr.sd.garagem.server.repository.UserRepository;
 import br.edu.utfpr.sd.garagem.server.security.PasswordHasher;
 
@@ -21,11 +22,19 @@ public final class AuthService {
         this.sessionService = sessionService;
     }
 
-    /** Autentica usuário e senha; se válidos, abre uma nova sessão. */
-    public Optional<Session> login(String username, String password) {
-        return userRepository.findByUsername(username)
-                .filter(user -> PasswordHasher.matches(password, user.getPasswordHash()))
-                .map(user -> sessionService.login(user.getUsername()));
+    /**
+     * Autentica usuário e senha; se válidos, abre uma nova sessão.
+     * Distingue usuário inexistente de senha incorreta (ver {@link LoginResult}).
+     */
+    public LoginResult login(String username, String password) {
+        Optional<User> user = userRepository.findByUsername(username);
+        if (user.isEmpty()) {
+            return LoginResult.userNotFound();
+        }
+        if (!PasswordHasher.matches(password, user.get().getPasswordHash())) {
+            return LoginResult.wrongPassword();
+        }
+        return LoginResult.success(sessionService.login(user.get().getUsername()));
     }
 
     /** Encerra a sessão associada ao token, se existir. */

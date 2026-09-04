@@ -53,7 +53,8 @@ class EndToEndSmokeTest {
             assertNotNull(token);
             assertTrue(!token.isBlank());
 
-            doLogin("admin", "senhaErrada", StatusCode.UNAUTHORIZED);
+            doLogin("admin", "senhaErrada9", StatusCode.UNAUTHORIZED);
+            doLogin("usuarioinexistente", "qualquerSenha123", StatusCode.UNAUTHORIZED);
 
             doLogout(token, StatusCode.OK);
             doLogout(token, StatusCode.UNAUTHORIZED);
