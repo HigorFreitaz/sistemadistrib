@@ -20,3 +20,7 @@ Thumbs.db
 # Dados gerados em tempo de execucao (persistencia local do servidor)
 server/dados/
 *.log
+
+# Documentos de referencia da disciplina (PDFs, planilha, docx) - materiais
+# do professor e dos colegas, nao devem ir para o repositorio publico
+docs/
