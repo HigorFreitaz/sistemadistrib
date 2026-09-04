@@ -7,11 +7,11 @@ import br.edu.utfpr.sd.garagem.common.protocol.LoginRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
-import br.edu.utfpr.sd.garagem.common.validation.PasswordValidator;
-import br.edu.utfpr.sd.garagem.common.validation.UsernameValidator;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ProgressIndicator;
@@ -21,13 +21,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Controller da tela de login: valida o formato dos campos em tempo real
- * (feedback imediato) e delega a autenticação ao {@link SocketConnector},
- * sempre em uma thread de segundo plano para não travar a interface.
+ * Controller da tela de login: delega a autenticação ao
+ * {@link SocketConnector} em uma thread de segundo plano, para não travar
+ * a interface. Não julga o formato de usuário/senha enquanto o usuário
+ * digita — ao contrário do cadastro, aqui a senha já existe, e reagir em
+ * tempo real a cada tecla só vazaria informação sobre a política de senha
+ * sem necessidade. Qualquer falha (credenciais erradas, rede fora do ar)
+ * aparece como uma notificação avulsa, nunca como texto fixo empurrando o
+ * formulário.
  */
 public final class LoginController {
 
     private static final Logger LOGGER = Logger.getLogger(LoginController.class.getName());
+    private static final String INVALID_CREDENTIALS_MESSAGE = "Usuário e/ou senha incorretos.";
 
     @FXML
     private TextField hostField;
@@ -37,10 +43,6 @@ public final class LoginController {
     private TextField usernameField;
     @FXML
     private PasswordField passwordField;
-    @FXML
-    private Label usernameErrorLabel;
-    @FXML
-    private Label passwordErrorLabel;
     @FXML
     private Label statusLabel;
     @FXML
@@ -68,39 +70,15 @@ public final class LoginController {
     private void initialize() {
         hostField.setText("localhost");
         portField.setText("5555");
-        usernameErrorLabel.setText("usuario invalido: 3-20 letras minusculas, numeros, '.' ou '_'");
-        passwordErrorLabel.setText("senha invalida: contem caractere nao permitido");
-        usernameField.textProperty().addListener((obs, old, value) -> validateUsername());
-        passwordField.textProperty().addListener((obs, old, value) -> validatePassword());
-        validateUsername();
-        validatePassword();
-    }
-
-    private void validateUsername() {
-        boolean valid = UsernameValidator.isValid(usernameField.getText());
-        showError(usernameErrorLabel, !usernameField.getText().isEmpty() && !valid);
+        usernameField.textProperty().addListener((obs, old, value) -> updateLoginButtonState());
+        passwordField.textProperty().addListener((obs, old, value) -> updateLoginButtonState());
         updateLoginButtonState();
     }
 
-    private void validatePassword() {
-        boolean valid = PasswordValidator.isValid(passwordField.getText());
-        showError(passwordErrorLabel, !passwordField.getText().isEmpty() && !valid);
-        updateLoginButtonState();
-    }
-
-    /**
-     * Um Label invisível ainda ocupa espaço no layout a menos que também
-     * seja marcado como "unmanaged" — por isso as duas chamadas juntas.
-     */
-    private static void showError(Label label, boolean show) {
-        label.setVisible(show);
-        label.setManaged(show);
-    }
-
+    /** Só exige que os campos não estejam vazios — o formato é assunto do servidor. */
     private void updateLoginButtonState() {
-        boolean valid = UsernameValidator.isValid(usernameField.getText())
-                && PasswordValidator.isValid(passwordField.getText());
-        loginButton.setDisable(!valid || loading);
+        boolean filled = !usernameField.getText().isBlank() && !passwordField.getText().isBlank();
+        loginButton.setDisable(!filled || loading);
     }
 
     @FXML
@@ -110,7 +88,7 @@ public final class LoginController {
         try {
             port = Integer.parseInt(portField.getText().trim());
         } catch (NumberFormatException e) {
-            statusLabel.setText("porta invalida");
+            showErrorNotification("Porta inválida.");
             return;
         }
         String username = usernameField.getText().trim();
@@ -140,7 +118,9 @@ public final class LoginController {
             TokenData tokenData = JsonSupport.GSON.fromJson(response.getData(), TokenData.class);
             app.showMain(username, tokenData.getToken(), outcome.connector());
         } else {
-            statusLabel.setText(response.getMessage());
+            // mensagem sempre genérica, independente do motivo devolvido pelo
+            // servidor — não revelar se foi o usuario ou a senha que falhou.
+            showErrorNotification(INVALID_CREDENTIALS_MESSAGE);
             outcome.connector().close();
         }
     }
@@ -150,7 +130,7 @@ public final class LoginController {
         String message = throwable instanceof ConnectionException
                 ? throwable.getMessage()
                 : "Erro inesperado ao tentar conectar.";
-        statusLabel.setText(message);
+        showErrorNotification(message);
         LOGGER.log(Level.WARNING, "falha ao efetuar login", throwable);
     }
 
@@ -161,7 +141,7 @@ public final class LoginController {
         try {
             port = Integer.parseInt(portField.getText().trim());
         } catch (NumberFormatException e) {
-            statusLabel.setText("porta invalida");
+            showErrorNotification("Porta inválida.");
             return;
         }
         app.showRegister(host, port);
@@ -177,5 +157,12 @@ public final class LoginController {
         passwordField.setDisable(loading);
         statusLabel.setText(loading ? "Conectando..." : "");
         updateLoginButtonState();
+    }
+
+    /** Mostra o erro em uma notificação separada, sem alterar o layout do formulário. */
+    private void showErrorNotification(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.setHeaderText(null);
+        alert.showAndWait();
     }
 }
