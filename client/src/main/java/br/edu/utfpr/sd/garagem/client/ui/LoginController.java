@@ -59,6 +59,11 @@ public final class LoginController {
         this.app = app;
     }
 
+    /** Preenche o campo de usuário (ex.: username recém-cadastrado). */
+    public void setUsername(String username) {
+        usernameField.setText(username);
+    }
+
     @FXML
     private void initialize() {
         hostField.setText("localhost");
@@ -138,6 +143,19 @@ public final class LoginController {
                 : "Erro inesperado ao tentar conectar.";
         statusLabel.setText(message);
         LOGGER.log(Level.WARNING, "falha ao efetuar login", throwable);
+    }
+
+    @FXML
+    private void handleGoToRegister() {
+        String host = hostField.getText().trim();
+        int port;
+        try {
+            port = Integer.parseInt(portField.getText().trim());
+        } catch (NumberFormatException e) {
+            statusLabel.setText("porta invalida");
+            return;
+        }
+        app.showRegister(host, port);
     }
 
     private void setLoading(boolean loading) {

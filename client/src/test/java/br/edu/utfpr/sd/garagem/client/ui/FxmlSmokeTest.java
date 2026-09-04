@@ -27,6 +27,12 @@ class FxmlSmokeTest {
         assertNotNull(root);
     }
 
+    @Test
+    void registerViewCarregaSemErro() throws Exception {
+        Parent root = loadOnFxThread("/fxml/register-view.fxml");
+        assertNotNull(root);
+    }
+
     private Parent loadOnFxThread(String resource) throws Exception {
         startToolkitIfNeeded();
         AtomicReference<Parent> result = new AtomicReference<>();
