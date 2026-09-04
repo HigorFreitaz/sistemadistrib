@@ -4,19 +4,42 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="br.edu.utfpr.sd.garagem.client.ui.MainController"
-      spacing="12">
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-    <Label fx:id="usernameLabel" style="-fx-font-size: 14px;"/>
-    <Label fx:id="tokenLabel"/>
-    <Separator/>
-    <Label text="// TODO EP-2: painel de vagas disponiveis por andar" style="-fx-text-fill: gray;"/>
-    <Button fx:id="logoutButton" text="Sair" onAction="#handleLogout"/>
-    <Label fx:id="statusLabel"/>
-</VBox>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="br.edu.utfpr.sd.garagem.client.ui.MainController"
+            stylesheets="@../css/app.css">
+    <top>
+        <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="16">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="SD Garagem" styleClass="app-title-on-dark"/>
+                <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark"/>
+            </VBox>
+            <Button fx:id="logoutButton" text="Sair" onAction="#handleLogout" styleClass="button-secondary-on-dark"/>
+        </HBox>
+    </top>
+    <center>
+        <StackPane>
+            <padding>
+                <Insets top="30" right="30" bottom="30" left="30"/>
+            </padding>
+            <VBox styleClass="card" maxWidth="440" maxHeight="-Infinity" spacing="14">
+                <padding>
+                    <Insets top="26" right="30" bottom="26" left="30"/>
+                </padding>
+                <Label fx:id="usernameLabel" styleClass="card-title"/>
+                <Label fx:id="tokenLabel" styleClass="field-label"/>
+                <Separator/>
+                <!-- TODO EP-2: substituir esta nota por um painel real de
+                     vagas disponiveis por andar, atualizado em tempo real. -->
+                <Label text="O painel de vagas disponiveis por andar chega na proxima entrega (EP-2)."
+                       wrapText="true" styleClass="placeholder-note"/>
+                <Label fx:id="statusLabel" styleClass="status-label"/>
+            </VBox>
+        </StackPane>
+    </center>
+</BorderPane>

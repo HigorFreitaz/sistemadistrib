@@ -6,42 +6,57 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="br.edu.utfpr.sd.garagem.client.ui.LoginController"
-      spacing="12">
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-    <Label text="Rastreador de Ocupacao de Garagens" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-    <GridPane hgap="10" vgap="6">
-        <columnConstraints>
-            <ColumnConstraints minWidth="80"/>
-            <ColumnConstraints hgrow="ALWAYS"/>
-        </columnConstraints>
-        <Label text="Host:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-        <TextField fx:id="hostField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-        <Label text="Porta:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-        <TextField fx:id="portField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-        <Label text="Usuario:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-        <TextField fx:id="usernameField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-        <Label fx:id="usernameErrorLabel" wrapText="true" visible="false"
-               style="-fx-text-fill: red; -fx-font-size: 10px;"
-               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-        <Label text="Senha:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-        <PasswordField fx:id="passwordField" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-        <Label fx:id="passwordErrorLabel" wrapText="true" visible="false"
-               style="-fx-text-fill: red; -fx-font-size: 10px;"
-               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-    </GridPane>
-    <HBox spacing="10" alignment="CENTER_LEFT">
-        <Button fx:id="loginButton" text="Entrar" onAction="#handleLogin" disable="true"/>
-        <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="20" prefHeight="20"/>
-        <Label fx:id="statusLabel"/>
-    </HBox>
-</VBox>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="br.edu.utfpr.sd.garagem.client.ui.LoginController"
+            stylesheets="@../css/app.css">
+    <top>
+        <VBox styleClass="header-bar" spacing="4">
+            <Label text="SD Garagem" styleClass="app-title-on-dark"/>
+            <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark"/>
+        </VBox>
+    </top>
+    <center>
+        <StackPane>
+            <padding>
+                <Insets top="30" right="30" bottom="30" left="30"/>
+            </padding>
+            <VBox styleClass="card" maxWidth="360" maxHeight="-Infinity" spacing="14">
+                <padding>
+                    <Insets top="26" right="30" bottom="26" left="30"/>
+                </padding>
+                <Label text="Entrar" styleClass="card-title"/>
+                <GridPane hgap="10" vgap="6">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="70"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
+                    <Label text="Host" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="hostField" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label text="Porta" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                    <TextField fx:id="portField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                    <Label text="Usuario" styleClass="field-label" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                    <TextField fx:id="usernameField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                    <Label fx:id="usernameErrorLabel" wrapText="true" visible="false" styleClass="error-label"
+                           GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    <Label text="Senha" styleClass="field-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="passwordField" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordErrorLabel" wrapText="true" visible="false" styleClass="error-label"
+                           GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                </GridPane>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Button fx:id="loginButton" text="Entrar" onAction="#handleLogin" disable="true" styleClass="button-primary"/>
+                    <ProgressIndicator fx:id="progressIndicator" visible="false" prefWidth="20" prefHeight="20"/>
+                    <Label fx:id="statusLabel" styleClass="status-label"/>
+                </HBox>
+            </VBox>
+        </StackPane>
+    </center>
+</BorderPane>
