@@ -2,35 +2,36 @@
 
 Projeto Final da disciplina de Sistemas Distribuídos (UTFPR-PG / DAINF —
 Tecnologia em Análise e Desenvolvimento de Software, Prof. Dr. Richard
-Ribeiro). Esta entrega corresponde à **Entrega Parcial 1 (EP-1)**.
+Ribeiro). Esta entrega é a **Entrega Parcial 1 (EP-1)**.
 
 ## Tema e contexto
 
-Garagens comerciais usam displays digitais nos portões de entrada para
-mostrar, em tempo real, a contagem de vagas disponíveis e a disponibilidade
-por andar. Neste projeto, os clientes simulam sensores de portão de
-entrada/saída ou aplicativos de motoristas, comunicando-se com um servidor
-central de gerenciamento da garagem.
+Garagens comerciais costumam ter displays digitais nos portões de entrada
+mostrando, em tempo real, quantas vagas estão livres e como elas se
+distribuem por andar. É esse cenário que o projeto simula: os clientes
+representam sensores de portão de entrada/saída (ou o app de um
+motorista), conversando com um servidor central que gerencia a garagem.
 
-**Desafio de sistema distribuído:** múltiplos terminais de portão podem
-operar simultaneamente sobre o mesmo servidor. A arquitetura precisa manter
-a consistência do estado compartilhado para que a contagem de vagas nunca
-fique negativa nem seja lida de forma inconsistente. Nesta entrega isso se
-reflete na forma como sessões são criadas/removidas (região crítica
-isolada com `synchronized` em `SessionService`) — o mesmo padrão que a
-EP-2 vai usar para proteger a contagem de vagas.
+O desafio de sistema distribuído por trás disso é manter o estado
+consistente com vários terminais de portão mexendo na garagem ao mesmo
+tempo — a contagem de vagas não pode nunca ficar negativa nem ser lida
+pela metade. Essa entrega ainda não mexe com vagas, mas já deixa o
+padrão pronto: a criação e remoção de sessão em `SessionService` roda
+dentro de uma região crítica isolada com `synchronized`, que é
+exatamente o molde que a EP-2 vai reaproveitar para proteger a contagem
+de vagas.
 
-## Escopo desta entrega (EP-1)
+## O que está pronto nesta entrega
 
-Implementado: estrutura Maven multi-módulo, JavaFX no cliente e no
-servidor, comunicação por sockets TCP com JSON, login, logout e cadastro
-de usuário ponta a ponta, persistência de usuários e sessões em arquivos
-JSON, GUI no cliente e no servidor, e os validadores de `username`/
-`password` com testes unitários.
+Login, logout e cadastro de usuário funcionando ponta a ponta: cliente e
+servidor em JavaFX, comunicação por socket TCP com JSON, usuários e
+sessões persistidos em arquivo, e os validadores de `username`/
+`password` cobertos por testes.
 
-**Fora do escopo** (ver "Próximas entregas"): consulta/atualização/exclusão
-de cadastro, CRUD de vagas/operações, perfil ADM. Os pontos de extensão
-estão marcados no código com `// TODO EP-2:`.
+Ficou fora do escopo (vai para a EP-2, ver mais abaixo): consultar,
+atualizar ou excluir um cadastro, o CRUD de vagas/operações e qualquer
+funcionalidade do perfil ADM. Os pontos onde isso vai entrar estão
+marcados no código com `// TODO EP-2:`.
 
 ## Arquitetura
 
@@ -42,19 +43,21 @@ sd-garagem/            (pom pai, packaging pom)
 └── client/             GUI do cliente, conector de socket
 ```
 
-- **common**: `model` (User, UserRole, Session), `protocol` (LoginRequest,
-  LogoutRequest, RegisterRequest, Response, TokenData, StatusCode,
-  Methods), `validation` (UsernameValidator, PasswordValidator), `json`
-  (configuração do Gson), `transport` (framing de linha JSON em UTF-8) e
-  `css` (folha de estilo compartilhada pelas GUIs de cliente e servidor).
-- **server**: `config` (porta), `security` (hash PBKDF2), `repository`
-  (persistência JSON com escrita atômica), `service` (AuthService,
-  SessionService, LoginResult), `net` (GarageServer, ClientHandler,
-  RequestDispatcher), `log` (mascaramento de senha), `ui` (GUI JavaFX).
-- **client**: `net` (SocketConnector), `ui` (ClienteApp, LoginController,
-  RegisterController, MainController) + FXML.
+O `common` é a única fonte de verdade do formato das mensagens — é o que
+garante que cliente e servidor (e, mais pra frente, os de outros colegas)
+falem a mesma língua. Além do modelo (`User`, `Session`) e do protocolo
+(`LoginRequest`, `RegisterRequest`, `Response`, `StatusCode`...), ele
+também guarda os validadores de formato e a folha de estilo (`css/`) que
+as duas GUIs importam.
 
-### Fluxo de login (diagrama)
+O `server` cuida do socket (`GarageServer`, `ClientHandler`,
+`RequestDispatcher`), da persistência em JSON com escrita atômica, do
+hash de senha (PBKDF2) e da própria janela de status/log. O `client` só
+tem o conector de socket e as telas (login, cadastro, principal) com
+seus respectivos FXML — nada de lógica de negócio no controller, isso
+fica nos validadores e serviços de `common`/`server`.
+
+### Como um login acontece
 
 ```
 Cliente (LoginController)                     Servidor (GarageServer)
@@ -93,199 +96,176 @@ Cliente (LoginController)                     Servidor (GarageServer)
 
 ## Protocolo de troca de mensagens
 
-Fonte da verdade: `docs/Protocolo de Troca de Mensagens.xlsx` (hoje só o
-login está fechado). Framing: um objeto JSON por linha (newline-delimited
-JSON), UTF-8, lido com `BufferedReader.readLine()` e escrito com
-`PrintWriter` em auto-flush (ver `common.transport.MessageIO`).
+A fonte da verdade é a planilha de protocolo (mantida por Nathan e
+Rafael) — hoje só o login está fechado nela; logout e cadastro seguem o
+mesmo padrão por analogia, documentado como suposição mais abaixo.
+
+O framing é simples: um objeto JSON por linha (newline-delimited JSON),
+sempre em UTF-8, lido com `BufferedReader.readLine()` e escrito com
+`PrintWriter` em auto-flush (`common.transport.MessageIO`).
 
 ### Login
 
-Requisição (cliente → servidor):
 ```json
+// cliente -> servidor
 {"method":"login","username":"admin","password":"Admin@123"}
 ```
-
-Resposta de sucesso (servidor → cliente):
 ```json
+// sucesso
 {"statusCode":200,"message":"Login realizado com sucesso","data":{"token":"3fa2...uuid"}}
-```
-
-Resposta de erro (usuário não encontrado):
-```json
+// usuario nao encontrado
 {"statusCode":401,"message":"Usuario nao encontrado","data":null}
-```
-
-Resposta de erro (senha incorreta):
-```json
+// senha incorreta
 {"statusCode":401,"message":"Senha incorreta","data":null}
 ```
 
 ### Cadastro
 
-Formato ainda não definido na planilha; implementado seguindo o fluxo
-descrito em `docs/Requisitos Funcionais e não funcionais.docx` e o mesmo
-padrão estrutural do login (ver seção de suposições abaixo). Não abre
-sessão — o usuário precisa logar separadamente depois de se cadastrar.
+Não abre sessão — depois de cadastrar, o usuário precisa logar
+separadamente.
 
-Requisição (cliente → servidor):
 ```json
+// cliente -> servidor
 {"method":"register","username":"novo.usuario","password":"SenhaForte9"}
 ```
-
-Resposta de sucesso:
 ```json
+// sucesso
 {"statusCode":200,"message":"Cadastro realizado com sucesso","data":null}
-```
-
-Resposta de erro (username já cadastrado):
-```json
+// username ja existe
 {"statusCode":409,"message":"Usuario ja cadastrado","data":null}
 ```
 
 ### Logout
 
-Formato ainda não definido na planilha; implementado seguindo o mesmo
-padrão estrutural do login (ver seção de suposições abaixo).
-
-Requisição (cliente → servidor):
 ```json
+// cliente -> servidor
 {"method":"logout","token":"3fa2...uuid"}
 ```
-
-Resposta de sucesso:
 ```json
+// sucesso
 {"statusCode":200,"message":"Logout realizado com sucesso","data":null}
-```
-
-Resposta de erro (token inválido ou inexistente):
-```json
+// token invalido ou ja expirado
 {"statusCode":401,"message":"Token invalido ou sessao inexistente","data":null}
 ```
 
 ### Códigos de status
 
-Centralizados em `common.protocol.StatusCode`, com semântica inspirada em
-HTTP: `200` sucesso, `400` requisição malformada/validação, `401`
+Centralizados em `common.protocol.StatusCode`, com semântica de HTTP:
+`200` sucesso, `400` requisição malformada ou fora do formato, `401`
 credenciais ou token inválidos, `404` operação não suportada, `409`
-conflito (ex.: username já cadastrado), `500` erro interno.
+conflito (username já cadastrado), `500` erro interno.
 
 ## Requisitos não funcionais de validação
 
-**`username`:** somente letras minúsculas e números; símbolos especiais
-liberados `.` e `_`; mínimo 3, máximo 20 caracteres; sem acentuação nem
-espaços.
+**`username`:** só letras minúsculas e números, com `.` e `_` liberados
+como símbolos; entre 3 e 20 caracteres; sem acento nem espaço.
 
 **`password`:** letras maiúsculas, minúsculas, números e os símbolos
-`# . * & % $ @ ! ( ) - _ = +`; nenhum outro caractere é aceito; mínimo 8,
-máximo 20 caracteres.
+`# . * & % $ @ ! ( ) - _ = +`; nada além disso; entre 8 e 20 caracteres.
 
-Ambos implementados em `common.validation`, validados no cliente (feedback
-imediato na tela de cadastro, como um checklist) e novamente no servidor
-(o cliente nunca é confiável), com testes JUnit 5 cobrindo os casos de
-borda.
+Os dois validadores moram em `common.validation` e rodam duas vezes: no
+cliente, para dar feedback imediato (o checklist da tela de cadastro), e
+de novo no servidor, porque o cliente nunca é confiável. Testes JUnit 5
+cobrem os casos de borda dos dois.
 
-## Como rodar no IntelliJ IDEA Ultimate
+## Como rodar
 
-1. Abrir a pasta do repositório e importar como projeto **Maven** (o
-   IntelliJ detecta o `pom.xml` pai automaticamente).
-2. Configurar o **JDK 21** no projeto (File → Project Structure → SDK).
-3. Criar duas run configurations do tipo **Maven**:
-   - **Servidor**: diretório de trabalho `server/`, comando `javafx:run`.
-   - **Cliente**: diretório de trabalho `client/`, comando `javafx:run`.
-4. Rodar primeiro o servidor e clicar em **Iniciar** na GUI; depois rodar
-   o cliente e fazer login com `admin` / `Admin@123` (senha padrão criada
-   no primeiro início — troque-a depois, o aviso aparece no log do
-   servidor).
+### Pelo IntelliJ IDEA Ultimate
 
-O servidor grava `dados/usuarios.json` e `dados/sessoes.json` relativos ao
-diretório de trabalho — por isso a run configuration do servidor deve ter
-o diretório de trabalho apontando para `server/`.
+1. Abra a pasta como projeto **Maven** — o IntelliJ acha o `pom.xml` pai
+   sozinho.
+2. Configure o **JDK 21** no projeto (File → Project Structure → SDK).
+3. Crie duas run configurations Maven: uma para o **servidor**
+   (diretório de trabalho `server/`, comando `javafx:run`) e outra para
+   o **cliente** (diretório de trabalho `client/`, mesmo comando).
+4. Rode o servidor primeiro e clique em **Iniciar** na janela dele; só
+   depois rode o cliente e logue com `admin` / `Admin@123` (a senha
+   padrão criada no primeiro início — o aviso pra trocá-la aparece no
+   log do servidor).
 
-## Como rodar por linha de comando
+O servidor grava `dados/usuarios.json` e `dados/sessoes.json` relativos
+ao diretório de trabalho, por isso a run configuration dele precisa
+apontar para `server/`.
+
+### Por linha de comando
 
 ```bash
-# instala o modulo common no repositorio local (uma vez, ou apos alterar o common)
+# instala o common no repositorio local (uma vez, ou sempre que ele mudar)
 ./mvnw install -pl common -am -DskipTests
 
-# servidor (a partir da pasta server/, porta default 5555)
+# servidor, a partir de server/ (porta default 5555)
 cd server && ../mvnw javafx:run
 
-# cliente (a partir da pasta client/, em outro terminal)
+# cliente, a partir de client/, em outro terminal
 cd client && ../mvnw javafx:run
 ```
 
-A porta do servidor pode ser trocada em `server/server.properties` ou
-passada como primeiro argumento de linha de comando.
+A porta muda em `server/server.properties` ou no primeiro argumento de
+linha de comando.
 
-### Atalho: `iniciar.cmd`
+### Ou só clique duas vezes: `iniciar.cmd`
 
-Para não precisar abrir terminal nem IntelliJ, um lançador único fica na
-raiz do repositório: dois cliques em `iniciar.cmd` abrem o servidor e o
-cliente ao mesmo tempo, cada um na sua própria janela de console. Se
-`JAVA_HOME` não estiver definido no sistema, ele usa como alternativa o
-JBR que acompanha o IntelliJ IDEA instalado na máquina.
+Na raiz do repositório tem um lançador único: `iniciar.cmd` sobe o
+servidor e abre o cliente ao mesmo tempo, cada um na sua janela. Se a
+máquina não tiver `JAVA_HOME` configurado, ele usa o JBR que vem junto
+do IntelliJ IDEA instalado.
 
 ## Suposições a validar com a turma
 
-- **Framing:** um objeto JSON por linha (newline-delimited), UTF-8. Opção
-  mais simples e que sobrevive à interoperabilidade entre implementações
-  diferentes.
-- **Valores de `statusCode`:** a planilha não fixa esses números; usamos
-  semântica HTTP, centralizada em `StatusCode`, fácil de renegociar.
-- **Formato do `logout` e do `register`:** nenhum dos dois está na
-  planilha; seguimos o mesmo padrão estrutural do login (`method` na
-  requisição, `statusCode`/`message`/`data` na resposta). O nome do
-  method de cadastro (`register`) foi escolhido em inglês, seguindo a
-  mesma convenção de `login`/`logout`.
-- **Política de sessão única:** um usuário não acumula sessões — logar de
-  novo invalida a sessão anterior dele.
-- **Capitalização de `message`:** o requisito de minúsculas obrigatórias
-  vale só para o valor de `method` (é explícito no documento). O texto de
-  `message` é para leitura humana, então começa com maiúscula — igual ao
-  resto dos textos da interface.
-- **Categorias obrigatórias de `password`:** o documento de requisitos não
-  exige que todas as categorias de caractere (maiúscula/minúscula/número/
-  símbolo) estejam presentes simultaneamente; validamos o conjunto de
-  caracteres permitido e o tamanho (8 a 20).
-- **Mensagens distintas no login, só no servidor:** `Requisitos Funcionais
-  e não funcionais.docx` pede explicitamente mensagens diferentes para
-  "usuário não encontrado" e "senha incorreta", e o servidor devolve
-  exatamente isso no campo `message`. O cliente, porém, nunca repassa essa
-  mensagem ao usuário: qualquer login que não dê certo (usuário, senha ou
-  os dois) aparece como a mesma notificação genérica "Usuário e/ou senha
-  incorretos.", para não deixar visível qual dos dois campos errou.
-- **Sem validação de formato em tempo real no login:** ao contrário do
-  cadastro (que mostra um checklist ao vivo, útil para criar uma senha
-  nova), o login não valida usuário/senha enquanto o usuário digita —
-  são credenciais que já existem, e reagir a cada tecla digitada só
-  daria pistas sobre a política de senha sem necessidade. O formato é
-  responsabilidade do servidor; qualquer erro vira a mesma notificação
-  genérica de credenciais inválidas.
-- **Persistência do último acesso da sessão:** atualizado em memória a
-  cada uso do token, mas só é gravado em disco quando a sessão é criada ou
-  encerrada (evita escrita a cada requisição autenticada).
-- **Tamanho do pool de threads do servidor:** fixado em 50 conexões
-  simultâneas (constante em `GarageServer`).
-- **Diretório de dados e `server.properties`:** ambos relativos ao
-  diretório de trabalho do processo (não empacotados como recurso), para
-  poderem ser editados sem recompilar.
-- **Papel do cadastro via `register`:** todo usuário cadastrado por esse
-  method nasce com papel `CLIENTE`; não há como criar um ADM pelo
-  protocolo nesta entrega (o único ADM é o `admin` da seed inicial).
-- **Cadastro não abre sessão:** depois de cadastrar, o cliente volta para
-  a tela de login (com o username já preenchido) em vez de logar
-  automaticamente — mantém cadastro e login como passos separados, como
-  descrito no documento de requisitos.
+O protocolo ainda está sendo fechado por Nathan e Rafael, e alguns
+comportamentos não estavam escritos em lugar nenhum — então tomamos
+decisões e documentamos aqui em vez de travar o desenvolvimento.
+
+**Sobre o protocolo:**
+- Nem `logout` nem `register` estão na planilha ainda. Os dois seguem o
+  mesmo padrão estrutural do login (`method` na requisição,
+  `statusCode`/`message`/`data` na resposta); o nome `register` foi
+  escolhido em inglês pra ficar consistente com `login`/`logout`.
+- A planilha também não fixa os valores de `statusCode`; usamos
+  semântica HTTP, centralizada numa única classe, fácil de renegociar
+  depois.
+- O requisito de minúsculas obrigatórias, no documento, é só para o
+  valor de `method`. O texto de `message` é para leitura humana, então
+  começa com maiúscula como o resto da interface.
+
+**Sobre login e segurança:**
+- Um usuário não acumula sessões: logar de novo derruba a sessão
+  anterior dele.
+- O documento de requisitos pede mensagens diferentes para "usuário não
+  encontrado" e "senha incorreta", e o servidor realmente devolve isso
+  no campo `message`. Mas o cliente nunca repassa essa diferença pro
+  usuário final — qualquer login que falhe vira a mesma notificação
+  genérica, "Usuário e/ou senha incorretos.", pra não dar pista de qual
+  campo errou.
+- Por isso também o login não valida usuário/senha em tempo real
+  enquanto o usuário digita (diferente do cadastro, que mostra um
+  checklist ao vivo — ali faz sentido, porque é uma senha nova sendo
+  criada). No login a senha já existe; reagir a cada tecla só daria
+  pistas sobre a política de senha sem necessidade.
+- Cadastro não loga automaticamente: depois de criar a conta, o cliente
+  volta pra tela de login com o username já preenchido, mantendo as
+  duas ações separadas como o documento descreve. Todo usuário criado
+  por esse caminho nasce com papel `CLIENTE` — não dá pra criar um ADM
+  pelo protocolo nesta entrega (o único é o `admin` da seed inicial).
+
+**Sobre o servidor:**
+- O último acesso de uma sessão é atualizado em memória a cada uso do
+  token, mas só vai pro disco quando a sessão é criada ou encerrada —
+  não faz sentido gravar arquivo a cada requisição autenticada.
+- O pool de threads do servidor está fixo em 50 conexões simultâneas
+  (constante em `GarageServer`).
+- Tanto a pasta de dados quanto o `server.properties` são relativos ao
+  diretório de trabalho do processo, não empacotados como recurso —
+  assim dá pra editar sem recompilar.
 
 ## Próximas entregas
 
-**EP-2** (marcado no código com `// TODO EP-2:`):
-- Demais `methods` do protocolo (consulta/atualização/exclusão de
-  cadastro, CRUD de vagas/operações, CRUD admin), assim que Nathan e
-  Rafael fecharem a planilha.
-- Painel de vagas disponíveis por andar na tela principal do cliente.
-- A região crítica da contagem de vagas, usando o mesmo padrão de
-  isolamento já usado em `SessionService` (criação/remoção de sessão).
+**EP-2** (pontos marcados no código com `// TODO EP-2:`): os demais
+`methods` do protocolo (consulta/atualização/exclusão de cadastro, CRUD
+de vagas e operações, CRUD do admin) assim que a planilha fechar; o
+painel de vagas disponíveis por andar na tela principal do cliente; e a
+região crítica da contagem de vagas, seguindo o mesmo isolamento já
+usado para sessão.
 
-**EP-3**: testes em rede com clientes e servidores de outros alunos;
-funcionalidade completa do perfil ADM.
+**EP-3**: testes em rede com clientes e servidores dos outros alunos, e
+a funcionalidade completa do perfil ADM.
