@@ -56,9 +56,7 @@ public final class MainController {
         };
         task.setOnSucceeded(event -> finishLogout(null));
         task.setOnFailed(event -> finishLogout(task.getException()));
-        Thread thread = new Thread(task, "logout-task");
-        thread.setDaemon(true);
-        thread.start();
+        TaskRunner.runInBackground(task, "logout-task");
     }
 
     /**

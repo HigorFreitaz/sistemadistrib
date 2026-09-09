@@ -84,11 +84,8 @@ public final class LoginController {
     @FXML
     private void handleLogin() {
         String host = hostField.getText().trim();
-        int port;
-        try {
-            port = Integer.parseInt(portField.getText().trim());
-        } catch (NumberFormatException e) {
-            showErrorNotification("Porta inválida.");
+        Integer port = parsePort();
+        if (port == null) {
             return;
         }
         String username = usernameField.getText().trim();
@@ -106,9 +103,7 @@ public final class LoginController {
         };
         task.setOnSucceeded(event -> onLoginSucceeded(task.getValue(), username));
         task.setOnFailed(event -> onLoginFailed(task.getException()));
-        Thread thread = new Thread(task, "login-task");
-        thread.setDaemon(true);
-        thread.start();
+        TaskRunner.runInBackground(task, "login-task");
     }
 
     private void onLoginSucceeded(LoginOutcome outcome, String username) {
@@ -137,14 +132,20 @@ public final class LoginController {
     @FXML
     private void handleGoToRegister() {
         String host = hostField.getText().trim();
-        int port;
-        try {
-            port = Integer.parseInt(portField.getText().trim());
-        } catch (NumberFormatException e) {
-            showErrorNotification("Porta inválida.");
+        Integer port = parsePort();
+        if (port == null) {
             return;
         }
         app.showRegister(host, port);
+    }
+
+    private Integer parsePort() {
+        try {
+            return Integer.parseInt(portField.getText().trim());
+        } catch (NumberFormatException e) {
+            showErrorNotification("Porta inválida.");
+            return null;
+        }
     }
 
     private void setLoading(boolean loading) {

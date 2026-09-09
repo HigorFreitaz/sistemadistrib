@@ -135,9 +135,7 @@ public final class RegisterController {
         };
         task.setOnSucceeded(event -> onRegisterSucceeded(task.getValue(), username));
         task.setOnFailed(event -> onRegisterFailed(task.getException()));
-        Thread thread = new Thread(task, "register-task");
-        thread.setDaemon(true);
-        thread.start();
+        TaskRunner.runInBackground(task, "register-task");
     }
 
     private void onRegisterSucceeded(Response response, String username) {
