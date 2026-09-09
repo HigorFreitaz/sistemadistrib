@@ -42,6 +42,8 @@ public final class ServerController implements ServerEventListener {
     @FXML
     private Button stopButton;
     @FXML
+    private Button logoutAllButton;
+    @FXML
     private Label statusLabel;
     @FXML
     private Label connectedClientsLabel;
@@ -51,11 +53,13 @@ public final class ServerController implements ServerEventListener {
     private TextArea logArea;
 
     private GarageServer server;
+    private AuthService authService;
 
     /** Preenche o estado inicial da tela a partir da configuração carregada. */
     public void init(ServerProperties properties) {
         portField.setText(String.valueOf(properties.getPort()));
         stopButton.setDisable(true);
+        logoutAllButton.setDisable(true);
     }
 
     @FXML
@@ -69,7 +73,7 @@ public final class ServerController implements ServerEventListener {
         }
         UserRepository userRepository = new JsonUserRepository(USERS_FILE);
         SessionRepository sessionRepository = new JsonSessionRepository(SESSIONS_FILE);
-        AuthService authService = new AuthService(userRepository, new SessionService(sessionRepository));
+        authService = new AuthService(userRepository, new SessionService(sessionRepository));
         RequestDispatcher dispatcher = new RequestDispatcher(authService, this);
         server = new GarageServer(port, dispatcher, this);
         try {
@@ -87,6 +91,16 @@ public final class ServerController implements ServerEventListener {
         }
     }
 
+    @FXML
+    private void handleLogoutAll() {
+        if (authService == null) {
+            return;
+        }
+        authService.logoutAllSessions();
+        onSessionCountChanged(authService.activeSessionCount());
+        appendLog("Todas as sessoes foram encerradas pelo operador do servidor.");
+    }
+
     /** Encerra o servidor ao fechar a janela, para não deixar o socket aberto. */
     public void shutdown() {
         if (server != null) {
@@ -100,6 +114,7 @@ public final class ServerController implements ServerEventListener {
             setStatusPill("Escutando na porta " + port, true);
             startButton.setDisable(true);
             stopButton.setDisable(false);
+            logoutAllButton.setDisable(false);
             portField.setDisable(true);
             appendLog("Servidor iniciado na porta " + port);
         });
@@ -111,6 +126,7 @@ public final class ServerController implements ServerEventListener {
             setStatusPill("Parado", false);
             startButton.setDisable(false);
             stopButton.setDisable(true);
+            logoutAllButton.setDisable(true);
             portField.setDisable(false);
             connectedClientsLabel.setText("0");
             appendLog("Servidor parado");

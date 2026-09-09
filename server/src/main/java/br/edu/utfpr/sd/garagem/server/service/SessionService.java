@@ -83,4 +83,13 @@ public final class SessionService {
     public int activeSessionCount() {
         return sessionsByToken.size();
     }
+
+    /** Encerra todas as sessões de uma vez — ação administrativa do operador do servidor. */
+    public void logoutAll() {
+        synchronized (lock) {
+            sessionsByToken.clear();
+            tokenByUsername.clear();
+            repository.saveAll(sessionsByToken.values());
+        }
+    }
 }

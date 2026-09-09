@@ -61,4 +61,9 @@ public final class AuthService {
     public int activeSessionCount() {
         return sessionService.activeSessionCount();
     }
+
+    /** Derruba todas as sessões ativas de uma vez, a pedido do operador do servidor. */
+    public void logoutAllSessions() {
+        sessionService.logoutAll();
+    }
 }

@@ -31,6 +31,7 @@
                 <TextField fx:id="portField" prefWidth="80"/>
                 <Button fx:id="startButton" text="Iniciar" onAction="#handleStart" defaultButton="true" styleClass="button-primary"/>
                 <Button fx:id="stopButton" text="Parar" onAction="#handleStop" styleClass="button-secondary"/>
+                <Button fx:id="logoutAllButton" text="Encerrar todas as sessões" onAction="#handleLogoutAll" styleClass="button-danger"/>
             </FlowPane>
             <FlowPane styleClass="stats-bar" hgap="14" vgap="10">
                 <VBox styleClass="stat-tile" spacing="2">

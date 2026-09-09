@@ -132,6 +132,18 @@
 }
 .button-secondary-on-dark:hover { -fx-background-color: rgba(255,255,255,0.22); }
 
+.button-danger {
+    -fx-background-color: transparent;
+    -fx-border-color: #C23B3B;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #C23B3B;
+    -fx-padding: 7 20;
+    -fx-cursor: hand;
+}
+.button-danger:hover { -fx-background-color: #FBE4E4; }
+.button-danger:disabled { -fx-border-color: #E3B3B3; -fx-text-fill: #E3B3B3; }
+
 /* ---- indicador de status (pill) ---- */
 .status-pill-online {
     -fx-background-color: #DFF5E7;
