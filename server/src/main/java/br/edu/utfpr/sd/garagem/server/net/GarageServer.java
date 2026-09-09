@@ -47,7 +47,12 @@ public final class GarageServer {
         Thread acceptThread = new Thread(this::acceptLoop, "server-accept-loop");
         acceptThread.setDaemon(true);
         acceptThread.start();
-        listener.onStarted(port);
+        listener.onStarted(getPort());
+    }
+
+    /** Porta em que o servidor está de fato escutando (relevante quando a porta configurada é 0, escolhida pelo SO). */
+    public synchronized int getPort() {
+        return serverSocket != null ? serverSocket.getLocalPort() : port;
     }
 
     private void acceptLoop() {
