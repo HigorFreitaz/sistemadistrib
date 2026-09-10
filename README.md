@@ -188,7 +188,7 @@ nativo do VS Code não conhece. Por isso, rodar pelo terminal integrado
 3. No terminal integrado:
 
    ```bash
-   # servidor, a partir de server/ (porta default 5555)
+   # servidor, a partir de server/ (porta default 20000)
    cd server && ../mvnw javafx:run
 
    # cliente, a partir de client/, em outro terminal
@@ -215,12 +215,16 @@ cd client && ../mvnw javafx:run   # em outro terminal
 ```
 
 A porta muda em `server/server.properties` ou no primeiro argumento de
-linha de comando.
+linha de comando. Precisa estar **entre 20000 e 25000** — faixa definida
+pelo professor para a disciplina; o servidor recusa (com aviso no log)
+qualquer porta fora dela, seja no arquivo, no argumento ou digitada na
+GUI (ver `ServerProperties.MIN_PORT`/`MAX_PORT`).
 
 ### Ou só clique duas vezes: `iniciar.cmd`
 
 Na raiz do repositório tem um lançador único: `iniciar.cmd` sobe o
-servidor e abre o cliente ao mesmo tempo, cada um na sua janela.
+servidor (em segundo plano) e abre o cliente ao mesmo tempo, tudo numa
+única janela de console.
 
 ## Suposições a validar com a turma
 
