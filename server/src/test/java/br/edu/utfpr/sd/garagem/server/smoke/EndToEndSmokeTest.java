@@ -96,7 +96,7 @@ class EndToEndSmokeTest {
             socket.connect(new InetSocketAddress("localhost", port), 3000);
             try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
                  PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                String json = "{\"method\":\"login\",\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+                String json = "{\"method\":\"login\",\"data\":{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}}";
                 writer.println(json);
                 String line = reader.readLine();
                 Response response = JsonSupport.GSON.fromJson(line, Response.class);
@@ -114,7 +114,7 @@ class EndToEndSmokeTest {
             socket.connect(new InetSocketAddress("localhost", port), 3000);
             try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
                  PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                String json = "{\"method\":\"logout\",\"token\":\"" + token + "\"}";
+                String json = "{\"method\":\"logout\",\"data\":{\"token\":\"" + token + "\"}}";
                 writer.println(json);
                 String line = reader.readLine();
                 Response response = JsonSupport.GSON.fromJson(line, Response.class);
@@ -128,7 +128,7 @@ class EndToEndSmokeTest {
             socket.connect(new InetSocketAddress("localhost", port), 3000);
             try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
                  PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                String json = "{\"method\":\"register\",\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+                String json = "{\"method\":\"register\",\"data\":{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}}";
                 writer.println(json);
                 String line = reader.readLine();
                 Response response = JsonSupport.GSON.fromJson(line, Response.class);

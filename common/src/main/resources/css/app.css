@@ -194,6 +194,37 @@
     -fx-font-size: 12px;
     -fx-font-weight: bold;
 }
+.help-badge {
+    -fx-background-color: #E1E6EE;
+    -fx-text-fill: #55607A;
+    -fx-background-radius: 50%;
+    -fx-min-width: 16;
+    -fx-min-height: 16;
+    -fx-max-width: 16;
+    -fx-max-height: 16;
+    -fx-alignment: center;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+.help-badge:hover {
+    -fx-background-color: #C7D0DE;
+}
+
+/* ---- tooltip com a legenda dos codigos de status ---- */
+.status-code-tooltip {
+    -fx-background-color: linear-gradient(to bottom right, #1B2645, #131B33);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255,255,255,0.10);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-text-fill: #DCE3F2;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 12px;
+    -fx-line-spacing: 3;
+    -fx-padding: 14 18;
+    -fx-effect: dropshadow(gaussian, rgba(15,20,40,0.45), 20, 0, 0, 8);
+}
 
 /* ---- area de log (servidor) ---- */
 .log-area {

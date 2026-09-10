@@ -9,10 +9,10 @@ class LogMaskingTest {
 
     @Test
     void mascaraValorDaSenha() {
-        String linha = "{\"method\":\"login\",\"username\":\"admin\",\"password\":\"Admin@123\"}";
+        String linha = "{\"method\":\"login\",\"data\":{\"username\":\"admin\",\"password\":\"Admin@123\"}}";
         String mascarada = LogMasking.maskPassword(linha);
         assertFalse(mascarada.contains("Admin@123"));
-        assertEquals("{\"method\":\"login\",\"username\":\"admin\",\"password\":\"***\"}", mascarada);
+        assertEquals("{\"method\":\"login\",\"data\":{\"username\":\"admin\",\"password\":\"***\"}}", mascarada);
     }
 
     @Test
