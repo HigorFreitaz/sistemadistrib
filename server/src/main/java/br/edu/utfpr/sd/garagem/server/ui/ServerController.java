@@ -129,9 +129,7 @@ public final class ServerController implements ServerEventListener {
 
     @FXML
     private void handleStop() {
-        if (server != null) {
-            server.stop();
-        }
+        shutdown();
     }
 
     @FXML
@@ -140,7 +138,7 @@ public final class ServerController implements ServerEventListener {
             return;
         }
         authService.logoutAllSessions();
-        clientRegistry.pushToAllAndForget(Response.error(StatusCode.SERVICE_UNAVAILABLE,
+        clientRegistry.broadcast(Response.error(StatusCode.SERVICE_UNAVAILABLE,
                 "Servidor em manutencao. Sua sessao foi encerrada pelo administrador."));
         onSessionCountChanged(authService.activeSessionCount());
         appendLog("Todas as sessoes foram encerradas pelo operador do servidor.");

@@ -9,6 +9,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -97,10 +98,23 @@ public final class MainController {
         }
     }
 
-    /** Reage a um aviso do servidor (ex.: sessão encerrada pelo operador), voltando ao login. */
+    /**
+     * Reage a um aviso do servidor (ex.: sessão encerrada pelo operador),
+     * voltando ao login. Traz a janela pra frente antes de avisar: com
+     * vários clientes abertos (ex.: testando multi-cliente), o Windows não
+     * deixa uma janela em segundo plano roubar o foco sozinha, então o
+     * aviso de uma delas podia ficar escondido atrás da outra sem o
+     * usuário perceber que precisava fechá-lo.
+     */
     private void handleServerPush(Response pushed) {
         listening = false;
+        Stage window = (Stage) usernameLabel.getScene().getWindow();
+        window.setIconified(false);
+        window.toFront();
+        window.requestFocus();
         Alert alert = new Alert(Alert.AlertType.WARNING, pushed.getMessage(), ButtonType.OK);
+        alert.initOwner(window);
+        alert.setTitle("Sessão encerrada pelo servidor");
         alert.setHeaderText("Sessão encerrada pelo servidor");
         alert.showAndWait();
         connector.close();

@@ -27,11 +27,28 @@ public final class ConnectedClientRegistry {
     }
 
     /** Envia a mesma mensagem para todos os clientes com sessão ativa agora, e esquece deles. */
-    public void pushToAllAndForget(Response response) {
-        List<ClientHandler> handlers = new ArrayList<>(handlersByToken.values());
-        handlersByToken.clear();
-        for (ClientHandler handler : handlers) {
+    public void broadcast(Response response) {
+        for (ClientHandler handler : drainHandlers()) {
             handler.push(response);
         }
+    }
+
+    /**
+     * Como {@link #broadcast}, mas também força o encerramento da conexão
+     * de cada cliente — usado quando o próprio servidor está parando, então
+     * não há sentido em esperar o cliente fechar por conta própria.
+     */
+    public void broadcastAndDisconnect(Response response) {
+        for (ClientHandler handler : drainHandlers()) {
+            handler.push(response);
+            handler.forceClose();
+        }
+    }
+
+    /** Tira uma foto de quem está registrado agora e já esvazia o registro. */
+    private List<ClientHandler> drainHandlers() {
+        List<ClientHandler> handlers = new ArrayList<>(handlersByToken.values());
+        handlersByToken.clear();
+        return handlers;
     }
 }

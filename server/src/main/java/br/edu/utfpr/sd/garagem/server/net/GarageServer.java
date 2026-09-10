@@ -1,5 +1,8 @@
 package br.edu.utfpr.sd.garagem.server.net;
 
+import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -80,12 +83,20 @@ public final class GarageServer {
         }
     }
 
-    /** Encerra o server socket e o pool de threads. */
+    /**
+     * Encerra o server socket e o pool de threads. Antes disso, avisa e
+     * desconecta quem estiver logado — {@code pool.shutdownNow()} sozinho
+     * não interrompe uma leitura bloqueada em socket puro (só threads de
+     * NIO são interrompíveis assim), então sem isso o cliente ficaria
+     * esperando para sempre por uma resposta que nunca chega.
+     */
     public synchronized void stop() {
         if (!running) {
             return;
         }
         running = false;
+        registry.broadcastAndDisconnect(Response.error(StatusCode.SERVICE_UNAVAILABLE,
+                "Servidor foi encerrado pelo operador."));
         try {
             serverSocket.close();
         } catch (IOException e) {

@@ -13,25 +13,39 @@ import br.edu.utfpr.sd.garagem.server.repository.JsonSessionRepository;
 import br.edu.utfpr.sd.garagem.server.repository.JsonUserRepository;
 import br.edu.utfpr.sd.garagem.server.service.AuthService;
 import br.edu.utfpr.sd.garagem.server.service.SessionService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Testes de ponta a ponta contra um {@link GarageServer} real, falando o
+ * protocolo cru em linhas JSON (ver {@link TestClient}). Cada teste ganha
+ * seu próprio servidor, numa porta efêmera, criado/derrubado em
+ * {@link #startServer()}/{@link #stopServer()}.
+ */
 class EndToEndSmokeTest {
 
-    /** Porta 0 pede ao SO uma porta livre qualquer — evita conflito com algo já ocupando uma porta fixa. */
     private static final int EPHEMERAL_PORT = 0;
+    private static final int CONNECT_TIMEOUT_MS = 3000;
+
+    private ConnectedClientRegistry registry;
+    private GarageServer server;
+    private int port;
 
     private static class NoOpListener implements ServerEventListener {
         @Override public void onStarted(int port) { }
@@ -41,28 +55,83 @@ class EndToEndSmokeTest {
         @Override public void onLog(String message) { }
     }
 
-    @Test
-    void fluxoCompletoDeLoginELogout() throws Exception {
+    @BeforeEach
+    void startServer() throws IOException {
         Path dir = Files.createTempDirectory("sdgaragem-smoke");
         JsonUserRepository users = new JsonUserRepository(dir.resolve("usuarios.json"));
         SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
         AuthService auth = new AuthService(users, sessions);
         RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
-        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), new ConnectedClientRegistry());
+        registry = new ConnectedClientRegistry();
+        server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), registry);
         server.start();
-        int port = server.getPort();
-        try {
-            String token = doLogin(port, "admin", "Admin@123", StatusCode.OK);
-            assertNotNull(token);
-            assertTrue(!token.isBlank());
+        port = server.getPort();
+    }
 
-            doLogin(port, "admin", "senhaErrada9", StatusCode.UNAUTHORIZED);
-            doLogin(port, "usuarioinexistente", "qualquerSenha123", StatusCode.UNAUTHORIZED);
+    /** Idempotente (ver {@link GarageServer#stop()}) — inofensivo mesmo quando o teste já parou o servidor sozinho. */
+    @AfterEach
+    void stopServer() {
+        server.stop();
+    }
 
-            doLogout(port, token, StatusCode.OK);
-            doLogout(port, token, StatusCode.UNAUTHORIZED);
-        } finally {
-            server.stop();
+    @Test
+    void fluxoCompletoDeLoginELogout() throws Exception {
+        String token = doLogin("admin", "Admin@123", StatusCode.OK);
+        assertNotNull(token);
+        assertTrue(!token.isBlank());
+
+        doLogin("admin", "senhaErrada9", StatusCode.UNAUTHORIZED);
+        doLogin("usuarioinexistente", "qualquerSenha123", StatusCode.UNAUTHORIZED);
+
+        doLogout(token, StatusCode.OK);
+        doLogout(token, StatusCode.UNAUTHORIZED);
+    }
+
+    @Test
+    void cadastraNovoUsuarioELoga() throws Exception {
+        doRegister("novo.usuario", "SenhaForte9", StatusCode.OK);
+        doRegister("novo.usuario", "OutraSenha9", StatusCode.CONFLICT);
+
+        String token = doLogin("novo.usuario", "SenhaForte9", StatusCode.OK);
+        assertNotNull(token);
+
+        doLogout(token, StatusCode.OK);
+    }
+
+    /**
+     * Com dois clientes conectados (não só um) porque foi exatamente esse o
+     * bug relatado em produção: o broadcast entregava pro primeiro cliente
+     * e esquecia do resto.
+     */
+    @Test
+    void logoutAllAvisaClientesConectados() throws Exception {
+        doRegister("outro.usuario", "SenhaForte9", StatusCode.OK);
+
+        try (TestClient admin = new TestClient(port); TestClient outro = new TestClient(port)) {
+            admin.login("admin", "Admin@123", StatusCode.OK);
+            outro.login("outro.usuario", "SenhaForte9", StatusCode.OK);
+
+            // sem os clientes pedirem nada, o operador encerra todas as sessoes
+            registry.broadcast(Response.error(StatusCode.SERVICE_UNAVAILABLE, "Servidor em manutencao"));
+
+            for (TestClient client : List.of(admin, outro)) {
+                Response pushed = client.nextResponse();
+                assertEquals(StatusCode.SERVICE_UNAVAILABLE, pushed.getStatusCode(), "cliente nao recebeu o aviso");
+                assertEquals("Servidor em manutencao", pushed.getMessage());
+            }
+        }
+    }
+
+    /** Cobre as duas consequências de parar o servidor: quem já estava logado é avisado/desconectado, e a porta para de aceitar conexão nova. */
+    @Test
+    void pararServidorDesconectaCliente() throws Exception {
+        try (TestClient client = new TestClient(port)) {
+            client.login("admin", "Admin@123", StatusCode.OK);
+
+            server.stop(); // o operador clica em "Parar" com o cliente ainda logado
+
+            assertEquals(StatusCode.SERVICE_UNAVAILABLE, client.nextResponse().getStatusCode());
+            assertTrue(client.isClosedByPeer(), "servidor nao fechou a conexao do cliente ao parar");
         }
 
         Thread.sleep(200);
@@ -73,103 +142,67 @@ class EndToEndSmokeTest {
         });
     }
 
-    @Test
-    void cadastraNovoUsuarioELoga() throws Exception {
-        Path dir = Files.createTempDirectory("sdgaragem-smoke-cadastro");
-        JsonUserRepository users = new JsonUserRepository(dir.resolve("usuarios.json"));
-        SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
-        AuthService auth = new AuthService(users, sessions);
-        RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
-        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), new ConnectedClientRegistry());
-        server.start();
-        int port = server.getPort();
-        try {
-            doRegister(port, "novo.usuario", "SenhaForte9", StatusCode.OK);
-            doRegister(port, "novo.usuario", "OutraSenha9", StatusCode.CONFLICT);
-
-            String token = doLogin(port, "novo.usuario", "SenhaForte9", StatusCode.OK);
-            assertNotNull(token);
-
-            doLogout(port, token, StatusCode.OK);
-        } finally {
-            server.stop();
+    private String doLogin(String username, String password, int expectedStatus) throws IOException {
+        try (TestClient client = new TestClient(port)) {
+            return client.login(username, password, expectedStatus);
         }
     }
 
-    @Test
-    void encerrarTodasAsSessoesEmpurraAvisoParaClienteConectado() throws Exception {
-        Path dir = Files.createTempDirectory("sdgaragem-smoke-push");
-        JsonUserRepository users = new JsonUserRepository(dir.resolve("usuarios.json"));
-        SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
-        AuthService auth = new AuthService(users, sessions);
-        RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
-        ConnectedClientRegistry registry = new ConnectedClientRegistry();
-        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), registry);
-        server.start();
-        int port = server.getPort();
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("localhost", port), 3000);
-            try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
-                 PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                writer.println("{\"method\":\"login\",\"data\":{\"username\":\"admin\",\"password\":\"Admin@123\"}}");
-                Response loginResponse = JsonSupport.GSON.fromJson(reader.readLine(), Response.class);
-                assertEquals(StatusCode.OK, loginResponse.getStatusCode());
-
-                // sem o cliente pedir nada, o operador encerra todas as sessoes
-                registry.pushToAllAndForget(Response.error(StatusCode.SERVICE_UNAVAILABLE, "Servidor em manutencao"));
-
-                Response pushed = JsonSupport.GSON.fromJson(reader.readLine(), Response.class);
-                assertEquals(StatusCode.SERVICE_UNAVAILABLE, pushed.getStatusCode());
-                assertEquals("Servidor em manutencao", pushed.getMessage());
-            }
-        } finally {
-            server.stop();
+    private void doLogout(String token, int expectedStatus) throws IOException {
+        try (TestClient client = new TestClient(port)) {
+            client.send("{\"method\":\"logout\",\"data\":{\"token\":\"" + token + "\"}}", expectedStatus);
         }
     }
 
-    private String doLogin(int port, String username, String password, int expectedStatus) throws Exception {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("localhost", port), 3000);
-            try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
-                 PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                String json = "{\"method\":\"login\",\"data\":{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}}";
-                writer.println(json);
-                String line = reader.readLine();
-                Response response = JsonSupport.GSON.fromJson(line, Response.class);
-                assertEquals(expectedStatus, response.getStatusCode(), "resposta: " + line);
-                if (response.getStatusCode() == StatusCode.OK) {
-                    return JsonSupport.GSON.fromJson(response.getData(), TokenData.class).getToken();
-                }
-                return null;
-            }
+    private void doRegister(String username, String password, int expectedStatus) throws IOException {
+        try (TestClient client = new TestClient(port)) {
+            client.send("{\"method\":\"register\",\"data\":{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}}",
+                    expectedStatus);
         }
     }
 
-    private void doLogout(int port, String token, int expectedStatus) throws Exception {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("localhost", port), 3000);
-            try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
-                 PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                String json = "{\"method\":\"logout\",\"data\":{\"token\":\"" + token + "\"}}";
-                writer.println(json);
-                String line = reader.readLine();
-                Response response = JsonSupport.GSON.fromJson(line, Response.class);
-                assertEquals(expectedStatus, response.getStatusCode(), "resposta: " + line);
-            }
-        }
-    }
+    /** Uma conexão crua de teste: abre o socket, manda uma linha JSON, lê a resposta. */
+    private static final class TestClient implements AutoCloseable {
+        private final Socket socket;
+        private final BufferedReader reader;
+        private final PrintWriter writer;
 
-    private void doRegister(int port, String username, String password, int expectedStatus) throws Exception {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("localhost", port), 3000);
-            try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
-                 PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
-                String json = "{\"method\":\"register\",\"data\":{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}}";
-                writer.println(json);
-                String line = reader.readLine();
-                Response response = JsonSupport.GSON.fromJson(line, Response.class);
-                assertEquals(expectedStatus, response.getStatusCode(), "resposta: " + line);
-            }
+        TestClient(int port) throws IOException {
+            socket = new Socket();
+            socket.connect(new InetSocketAddress("localhost", port), CONNECT_TIMEOUT_MS);
+            reader = MessageIO.newReader(socket.getInputStream());
+            writer = MessageIO.newWriter(socket.getOutputStream());
+        }
+
+        /** Loga e devolve o token (só presente quando {@code expectedStatus} é {@link StatusCode#OK}). */
+        String login(String username, String password, int expectedStatus) throws IOException {
+            Response response = send("{\"method\":\"login\",\"data\":{\"username\":\"" + username
+                    + "\",\"password\":\"" + password + "\"}}", expectedStatus);
+            return response.getStatusCode() == StatusCode.OK
+                    ? JsonSupport.GSON.fromJson(response.getData(), TokenData.class).getToken()
+                    : null;
+        }
+
+        Response send(String rawJson, int expectedStatus) throws IOException {
+            writer.println(rawJson);
+            Response response = nextResponse();
+            assertEquals(expectedStatus, response.getStatusCode(), "resposta: " + response.getMessage());
+            return response;
+        }
+
+        Response nextResponse() throws IOException {
+            return JsonSupport.GSON.fromJson(reader.readLine(), Response.class);
+        }
+
+        /** {@code true} se o servidor já fechou a conexão (a próxima leitura bate em EOF). */
+        boolean isClosedByPeer() throws IOException {
+            socket.setSoTimeout(CONNECT_TIMEOUT_MS);
+            return socket.getInputStream().read() == -1;
+        }
+
+        @Override
+        public void close() throws IOException {
+            socket.close();
         }
     }
 }

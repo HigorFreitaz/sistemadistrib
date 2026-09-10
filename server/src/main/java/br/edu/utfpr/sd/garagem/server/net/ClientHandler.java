@@ -96,4 +96,18 @@ public final class ClientHandler implements Runnable, ClientSession {
         out.println(json);
         listener.onLog("-> (push) " + json);
     }
+
+    /**
+     * Fecha a conexão de fora da thread de {@link #run()} — usado quando o
+     * próprio servidor está parando. Isso faz a leitura bloqueada em
+     * {@code reader.readLine()} lançar {@link IOException}, encerrando o
+     * loop de {@link #run()} normalmente pelo caminho de erro já existente.
+     */
+    void forceClose() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            LOGGER.log(Level.FINE, "erro ao forcar o fechamento da conexao (ignorado)", e);
+        }
+    }
 }

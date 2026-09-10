@@ -59,7 +59,7 @@ public final class RequestDispatcher {
 
     private Response handleLogin(JsonObject envelope, ClientSession session) {
         LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
-        if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
+        if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
             return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
         }
         LoginResult result = authService.login(request.getUsername(), request.getPassword());
@@ -94,12 +94,16 @@ public final class RequestDispatcher {
 
     private Response handleRegister(JsonObject envelope) {
         RegisterRequest request = JsonSupport.GSON.fromJson(envelope, RegisterRequest.class);
-        if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
+        if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
             return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
         }
         boolean created = authService.register(request.getUsername(), request.getPassword());
         return created
                 ? Response.ok("Cadastro realizado com sucesso", null)
                 : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
+    }
+
+    private static boolean credenciaisValidas(String username, String password) {
+        return UsernameValidator.isValid(username) && PasswordValidator.isValid(password);
     }
 }
