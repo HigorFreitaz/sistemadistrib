@@ -85,6 +85,21 @@ public final class SocketConnector implements AutoCloseable {
         }
     }
 
+    /**
+     * Bloqueia esperando uma mensagem que o servidor mande fora do ciclo
+     * requisição/resposta normal (ex.: aviso do operador). Ao contrário de
+     * {@link #send}, propaga {@link SocketTimeoutException} sem embrulhar —
+     * quem chama usa isso para distinguir "ninguém mandou nada ainda" (ocioso,
+     * continue esperando) de uma falha real de conexão.
+     */
+    public Response awaitPush() throws IOException {
+        String line = reader.readLine();
+        if (line == null) {
+            throw new IOException("conexão encerrada pelo servidor");
+        }
+        return JsonSupport.GSON.fromJson(line, Response.class);
+    }
+
     @Override
     public void close() {
         if (socket == null) {

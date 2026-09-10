@@ -226,6 +226,10 @@ Na raiz do repositório tem um lançador único: `iniciar.cmd` sobe o
 servidor (em segundo plano) e abre o cliente ao mesmo tempo, tudo numa
 única janela de console.
 
+Pra testar com vários clientes ao mesmo tempo (sem subir outro
+servidor), use `cliente.cmd` — cada clique abre uma instância nova do
+cliente, todas conversando com o mesmo servidor já rodando.
+
 ## Suposições a validar com a turma
 
 O protocolo ainda está sendo fechado por Nathan e Rafael, e alguns

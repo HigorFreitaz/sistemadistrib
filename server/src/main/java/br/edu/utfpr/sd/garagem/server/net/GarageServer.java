@@ -1,5 +1,8 @@
 package br.edu.utfpr.sd.garagem.server.net;
 
+import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,16 +27,19 @@ public final class GarageServer {
     private final int port;
     private final RequestDispatcher dispatcher;
     private final ServerEventListener listener;
+    private final ConnectedClientRegistry registry;
     private final AtomicInteger connectedClients = new AtomicInteger();
 
     private ExecutorService pool;
     private ServerSocket serverSocket;
     private volatile boolean running;
 
-    public GarageServer(int port, RequestDispatcher dispatcher, ServerEventListener listener) {
+    public GarageServer(int port, RequestDispatcher dispatcher, ServerEventListener listener,
+                         ConnectedClientRegistry registry) {
         this.port = port;
         this.dispatcher = dispatcher;
         this.listener = listener;
+        this.registry = registry;
     }
 
     /** Abre o server socket e começa a aceitar conexões em segundo plano. */
@@ -71,18 +77,26 @@ public final class GarageServer {
 
     private void runClient(Socket socket) {
         try {
-            new ClientHandler(socket, dispatcher, listener).run();
+            new ClientHandler(socket, dispatcher, listener, registry).run();
         } finally {
             listener.onClientCountChanged(connectedClients.decrementAndGet());
         }
     }
 
-    /** Encerra o server socket e o pool de threads. */
+    /**
+     * Encerra o server socket e o pool de threads. Antes disso, avisa e
+     * desconecta quem estiver logado — {@code pool.shutdownNow()} sozinho
+     * não interrompe uma leitura bloqueada em socket puro (só threads de
+     * NIO são interrompíveis assim), então sem isso o cliente ficaria
+     * esperando para sempre por uma resposta que nunca chega.
+     */
     public synchronized void stop() {
         if (!running) {
             return;
         }
         running = false;
+        registry.broadcastAndDisconnect(Response.error(StatusCode.SERVICE_UNAVAILABLE,
+                "Servidor foi encerrado pelo operador."));
         try {
             serverSocket.close();
         } catch (IOException e) {

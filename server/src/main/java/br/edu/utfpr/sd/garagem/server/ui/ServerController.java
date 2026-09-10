@@ -1,6 +1,9 @@
 package br.edu.utfpr.sd.garagem.server.ui;
 
+import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.server.config.ServerProperties;
+import br.edu.utfpr.sd.garagem.server.net.ConnectedClientRegistry;
 import br.edu.utfpr.sd.garagem.server.net.GarageServer;
 import br.edu.utfpr.sd.garagem.server.net.RequestDispatcher;
 import br.edu.utfpr.sd.garagem.server.net.ServerEventListener;
@@ -10,12 +13,16 @@ import br.edu.utfpr.sd.garagem.server.repository.SessionRepository;
 import br.edu.utfpr.sd.garagem.server.repository.UserRepository;
 import br.edu.utfpr.sd.garagem.server.service.AuthService;
 import br.edu.utfpr.sd.garagem.server.service.SessionService;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -34,6 +41,8 @@ public final class ServerController implements ServerEventListener {
     private static final Logger LOGGER = Logger.getLogger(ServerController.class.getName());
     private static final Path USERS_FILE = Path.of("dados", "usuarios.json");
     private static final Path SESSIONS_FILE = Path.of("dados", "sessoes.json");
+    private static final Duration TOOLTIP_SHOW_DELAY = Duration.millis(150);
+    private static final double TOOLTIP_VERTICAL_GAP = 8;
 
     @FXML
     private TextField portField;
@@ -51,9 +60,37 @@ public final class ServerController implements ServerEventListener {
     private Label activeSessionsLabel;
     @FXML
     private TextArea logArea;
+    @FXML
+    private Label statusCodeHelpBadge;
+    @FXML
+    private Tooltip statusCodeTooltip;
 
     private GarageServer server;
     private AuthService authService;
+    private ConnectedClientRegistry clientRegistry;
+
+    /**
+     * Mostra/esconde o tooltip de ajuda na mao, ancorado abaixo do badge, em
+     * vez de deixar o JavaFX seguir automaticamente o cursor: o badge é
+     * pequeno (16x16) e o popup automático acaba sobrepondo o próprio
+     * cursor, o que faz o JavaFX interpretar como "mouse saiu" e entrar em
+     * loop de mostra/esconde (bug corrigido nesta versão).
+     */
+    @FXML
+    private void initialize() {
+        PauseTransition showDelay = new PauseTransition(TOOLTIP_SHOW_DELAY);
+        showDelay.setOnFinished(event -> showStatusCodeTooltip());
+        statusCodeHelpBadge.setOnMouseEntered(event -> showDelay.playFromStart());
+        statusCodeHelpBadge.setOnMouseExited(event -> {
+            showDelay.stop();
+            statusCodeTooltip.hide();
+        });
+    }
+
+    private void showStatusCodeTooltip() {
+        Bounds bounds = statusCodeHelpBadge.localToScreen(statusCodeHelpBadge.getBoundsInLocal());
+        statusCodeTooltip.show(statusCodeHelpBadge, bounds.getMinX(), bounds.getMaxY() + TOOLTIP_VERTICAL_GAP);
+    }
 
     /** Preenche o estado inicial da tela a partir da configuração carregada. */
     public void init(ServerProperties properties) {
@@ -79,8 +116,9 @@ public final class ServerController implements ServerEventListener {
         UserRepository userRepository = new JsonUserRepository(USERS_FILE);
         SessionRepository sessionRepository = new JsonSessionRepository(SESSIONS_FILE);
         authService = new AuthService(userRepository, new SessionService(sessionRepository));
+        clientRegistry = new ConnectedClientRegistry();
         RequestDispatcher dispatcher = new RequestDispatcher(authService, this);
-        server = new GarageServer(port, dispatcher, this);
+        server = new GarageServer(port, dispatcher, this, clientRegistry);
         try {
             server.start();
         } catch (IOException e) {
@@ -91,9 +129,7 @@ public final class ServerController implements ServerEventListener {
 
     @FXML
     private void handleStop() {
-        if (server != null) {
-            server.stop();
-        }
+        shutdown();
     }
 
     @FXML
@@ -102,6 +138,8 @@ public final class ServerController implements ServerEventListener {
             return;
         }
         authService.logoutAllSessions();
+        clientRegistry.broadcast(Response.error(StatusCode.SERVICE_UNAVAILABLE,
+                "Servidor em manutencao. Sua sessao foi encerrada pelo administrador."));
         onSessionCountChanged(authService.activeSessionCount());
         appendLog("Todas as sessoes foram encerradas pelo operador do servidor.");
     }

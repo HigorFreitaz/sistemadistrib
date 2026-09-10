@@ -25,6 +25,9 @@ public final class StatusCode {
     /** Erro inesperado no servidor. */
     public static final int INTERNAL_ERROR = 500;
 
+    /** Servidor indisponivel (ex.: operador encerrou a sessao do cliente). */
+    public static final int SERVICE_UNAVAILABLE = 503;
+
     private StatusCode() {
     }
 }

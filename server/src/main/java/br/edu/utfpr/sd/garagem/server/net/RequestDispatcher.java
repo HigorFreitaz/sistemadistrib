@@ -33,7 +33,7 @@ public final class RequestDispatcher {
     }
 
     /** Processa uma linha recebida do cliente e devolve a resposta a ser enviada. */
-    public Response dispatch(String rawLine) {
+    public Response dispatch(String rawLine, ClientSession session) {
         JsonObject envelope;
         try {
             envelope = JsonParser.parseString(rawLine).getAsJsonObject();
@@ -46,8 +46,8 @@ public final class RequestDispatcher {
         }
         String method = methodElement.getAsString();
         return switch (method) {
-            case Methods.LOGIN -> handleLogin(envelope);
-            case Methods.LOGOUT -> handleLogout(envelope);
+            case Methods.LOGIN -> handleLogin(envelope, session);
+            case Methods.LOGOUT -> handleLogout(envelope, session);
             case Methods.REGISTER -> handleRegister(envelope);
             // TODO EP-2: registrar aqui os demais methods do protocolo (CRUD
             // de vagas/operacoes, CRUD admin), cada um delegando a um
@@ -57,33 +57,35 @@ public final class RequestDispatcher {
         };
     }
 
-    private Response handleLogin(JsonObject envelope) {
+    private Response handleLogin(JsonObject envelope, ClientSession session) {
         LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
-        if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
+        if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
             return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
         }
         LoginResult result = authService.login(request.getUsername(), request.getPassword());
         // mensagens distintas por caso, conforme o fluxo documentado em
         // docs/Requisitos Funcionais e nao funcionais.docx (ver LoginResult)
         return switch (result.getStatus()) {
-            case SUCCESS -> onLoginSuccess(result.getSession());
+            case SUCCESS -> onLoginSuccess(result.getSession(), session);
             case USER_NOT_FOUND -> Response.error(StatusCode.UNAUTHORIZED, "Usuario nao encontrado");
             case WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Senha incorreta");
         };
     }
 
-    private Response onLoginSuccess(Session session) {
+    private Response onLoginSuccess(Session session, ClientSession clientSession) {
         listener.onSessionCountChanged(authService.activeSessionCount());
+        clientSession.bindToken(session.getToken());
         return Response.ok("Login realizado com sucesso", new TokenData(session.getToken()));
     }
 
-    private Response handleLogout(JsonObject envelope) {
+    private Response handleLogout(JsonObject envelope, ClientSession session) {
         LogoutRequest request = JsonSupport.GSON.fromJson(envelope, LogoutRequest.class);
         if (request.getToken() == null || request.getToken().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Token nao informado");
         }
         boolean removed = authService.logout(request.getToken());
         if (removed) {
+            session.unbindToken();
             listener.onSessionCountChanged(authService.activeSessionCount());
             return Response.ok("Logout realizado com sucesso", null);
         }
@@ -92,12 +94,16 @@ public final class RequestDispatcher {
 
     private Response handleRegister(JsonObject envelope) {
         RegisterRequest request = JsonSupport.GSON.fromJson(envelope, RegisterRequest.class);
-        if (!UsernameValidator.isValid(request.getUsername()) || !PasswordValidator.isValid(request.getPassword())) {
+        if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
             return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
         }
         boolean created = authService.register(request.getUsername(), request.getPassword());
         return created
                 ? Response.ok("Cadastro realizado com sucesso", null)
                 : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
+    }
+
+    private static boolean credenciaisValidas(String username, String password) {
+        return UsernameValidator.isValid(username) && PasswordValidator.isValid(password);
     }
 }
