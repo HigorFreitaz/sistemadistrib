@@ -170,34 +170,48 @@ cobrem os casos de borda dos dois.
 
 ## Como rodar
 
-### Pelo IntelliJ IDEA Ultimate
+Desenvolvido e testado no **VS Code**. O projeto não depende de nenhuma
+IDE específica — é um Maven multi-módulo comum — mas os apps JavaFX
+usam o goal `javafx:run` do `javafx-maven-plugin`, que o botão "Run"
+nativo do VS Code não conhece. Por isso, rodar pelo terminal integrado
+(ou pelo `iniciar.cmd`) é o caminho mais confiável.
 
-1. Abra a pasta como projeto **Maven** — o IntelliJ acha o `pom.xml` pai
-   sozinho.
-2. Configure o **JDK 21** no projeto (File → Project Structure → SDK).
-3. Crie duas run configurations Maven: uma para o **servidor**
-   (diretório de trabalho `server/`, comando `javafx:run`) e outra para
-   o **cliente** (diretório de trabalho `client/`, mesmo comando).
+### Pelo VS Code
+
+1. Abra a pasta no VS Code e instale a extensão **Extension Pack for
+   Java** (Microsoft), se ainda não tiver — dá suporte a Maven,
+   autocomplete e debug. Ele reconhece o `pom.xml` pai e organiza os
+   três módulos sozinho.
+2. Confirme que há um **JDK 21+** configurado (`Ctrl+Shift+P` → "Java:
+   Configure Java Runtime"; o `.vscode/settings.json` do projeto já
+   deixa isso resolvido se houver um JDK compatível na máquina).
+3. No terminal integrado:
+
+   ```bash
+   # servidor, a partir de server/ (porta default 5555)
+   cd server && ../mvnw javafx:run
+
+   # cliente, a partir de client/, em outro terminal
+   cd client && ../mvnw javafx:run
+   ```
+
 4. Rode o servidor primeiro e clique em **Iniciar** na janela dele; só
    depois rode o cliente e logue com `admin` / `Admin@123` (a senha
    padrão criada no primeiro início — o aviso pra trocá-la aparece no
    log do servidor).
 
 O servidor grava `dados/usuarios.json` e `dados/sessoes.json` relativos
-ao diretório de trabalho, por isso a run configuration dele precisa
-apontar para `server/`.
+ao diretório de trabalho do processo, por isso os comandos acima entram
+em `server/` antes de rodar.
 
-### Por linha de comando
+### Por linha de comando (sem editor nenhum)
 
 ```bash
 # instala o common no repositorio local (uma vez, ou sempre que ele mudar)
 ./mvnw install -pl common -am -DskipTests
 
-# servidor, a partir de server/ (porta default 5555)
 cd server && ../mvnw javafx:run
-
-# cliente, a partir de client/, em outro terminal
-cd client && ../mvnw javafx:run
+cd client && ../mvnw javafx:run   # em outro terminal
 ```
 
 A porta muda em `server/server.properties` ou no primeiro argumento de
@@ -206,9 +220,7 @@ linha de comando.
 ### Ou só clique duas vezes: `iniciar.cmd`
 
 Na raiz do repositório tem um lançador único: `iniciar.cmd` sobe o
-servidor e abre o cliente ao mesmo tempo, cada um na sua janela. Se a
-máquina não tiver `JAVA_HOME` configurado, ele usa o JBR que vem junto
-do IntelliJ IDEA instalado.
+servidor e abre o cliente ao mesmo tempo, cada um na sua janela.
 
 ## Suposições a validar com a turma
 
