@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
@@ -50,7 +51,15 @@
             <padding>
                 <Insets top="16" right="24" bottom="16" left="24"/>
             </padding>
-            <Label text="Log do protocolo" styleClass="section-title"/>
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <Label text="Log do protocolo" styleClass="section-title"/>
+                <Label text="?" styleClass="help-badge">
+                    <tooltip>
+                        <Tooltip styleClass="status-code-tooltip" showDelay="150ms" showDuration="1m"
+                                 text="CODIGOS DE STATUS MAIS COMUNS&#10;&#10;200   OK — sucesso&#10;400   Bad Request — requisicao malformada ou dados invalidos&#10;401   Unauthorized — credenciais ou token invalidos/expirados&#10;404   Not Found — operacao (method) nao suportada&#10;409   Conflict — usuario ja cadastrado&#10;500   Internal Error — erro inesperado no servidor"/>
+                    </tooltip>
+                </Label>
+            </HBox>
             <TextArea fx:id="logArea" editable="false" wrapText="true" styleClass="log-area" VBox.vgrow="ALWAYS"/>
         </VBox>
     </center>

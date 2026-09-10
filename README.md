@@ -67,8 +67,8 @@ Cliente (LoginController)                     Servidor (GarageServer)
         |                                              |    ClientHandler dedicado
         |                                              |    (thread do pool)
         |--- 2. {"method":"login",                     |
-        |        "username":"...",                     |
-        |        "password":"..."}       ------------->|
+        |        "data":{"username":"...",             |
+        |                "password":"..."}}  --------->|
         |                                              |--- RequestDispatcher
         |                                              |      -> valida formato (common)
         |                                              |      -> AuthService.login()
@@ -85,7 +85,7 @@ Cliente (LoginController)                     Servidor (GarageServer)
         | (mantem o socket aberto, guarda o token)      |
         |                                              |
         |--- 4. {"method":"logout",                    |
-        |        "token":"..."}          ------------->|
+        |        "data":{"token":"..."}} ------------->|
         |                                              |--- SessionService.logout()
         |                                              |    remove a sessao, grava sessoes.json
         |<--- 5. {"statusCode":200,                    |
@@ -108,7 +108,7 @@ sempre em UTF-8, lido com `BufferedReader.readLine()` e escrito com
 
 ```json
 // cliente -> servidor
-{"method":"login","username":"admin","password":"Admin@123"}
+{"method":"login","data":{"username":"admin","password":"Admin@123"}}
 ```
 ```json
 // sucesso
@@ -126,7 +126,7 @@ separadamente.
 
 ```json
 // cliente -> servidor
-{"method":"register","username":"novo.usuario","password":"SenhaForte9"}
+{"method":"register","data":{"username":"novo.usuario","password":"SenhaForte9"}}
 ```
 ```json
 // sucesso
@@ -139,7 +139,7 @@ separadamente.
 
 ```json
 // cliente -> servidor
-{"method":"logout","token":"3fa2...uuid"}
+{"method":"logout","data":{"token":"3fa2...uuid"}}
 ```
 ```json
 // sucesso
