@@ -69,7 +69,7 @@ public final class LoginController {
     @FXML
     private void initialize() {
         hostField.setText("localhost");
-        portField.setText("5555");
+        portField.setText("20000");
         usernameField.textProperty().addListener((obs, old, value) -> updateLoginButtonState());
         passwordField.textProperty().addListener((obs, old, value) -> updateLoginButtonState());
         updateLoginButtonState();

@@ -71,6 +71,11 @@ public final class ServerController implements ServerEventListener {
             appendLog("Porta invalida: " + portField.getText());
             return;
         }
+        if (!ServerProperties.isValidPort(port)) {
+            appendLog("Porta fora da faixa permitida (" + ServerProperties.MIN_PORT + "-"
+                    + ServerProperties.MAX_PORT + "): " + port);
+            return;
+        }
         UserRepository userRepository = new JsonUserRepository(USERS_FILE);
         SessionRepository sessionRepository = new JsonSessionRepository(SESSIONS_FILE);
         authService = new AuthService(userRepository, new SessionService(sessionRepository));

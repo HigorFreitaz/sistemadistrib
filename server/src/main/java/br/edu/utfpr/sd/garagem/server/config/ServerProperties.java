@@ -11,13 +11,19 @@ import java.util.logging.Logger;
 
 /**
  * Configuração de porta do servidor: lida de {@code server.properties} no
- * diretório de trabalho, com valor padrão 5555, sobrescrevível pelo primeiro
- * argumento de linha de comando.
+ * diretório de trabalho, sobrescrevível pelo primeiro argumento de linha
+ * de comando. A porta deve estar entre {@link #MIN_PORT} e {@link #MAX_PORT}
+ * — faixa definida pelo professor para a disciplina.
  */
 public final class ServerProperties {
 
     private static final Logger LOGGER = Logger.getLogger(ServerProperties.class.getName());
-    private static final int DEFAULT_PORT = 5555;
+
+    /** Faixa de portas definida para a disciplina. */
+    public static final int MIN_PORT = 20000;
+    public static final int MAX_PORT = 25000;
+
+    private static final int DEFAULT_PORT = 20000;
     private static final String FILE_NAME = "server.properties";
 
     private final int port;
@@ -63,11 +69,22 @@ public final class ServerProperties {
         if (value == null || value.isBlank()) {
             return Optional.empty();
         }
+        int port;
         try {
-            return Optional.of(Integer.parseInt(value.trim()));
+            port = Integer.parseInt(value.trim());
         } catch (NumberFormatException e) {
             LOGGER.warning(() -> "valor de porta invalido ignorado: " + value);
             return Optional.empty();
         }
+        if (!isValidPort(port)) {
+            LOGGER.warning(() -> "porta " + port + " fora da faixa permitida (" + MIN_PORT + "-" + MAX_PORT + "), ignorada");
+            return Optional.empty();
+        }
+        return Optional.of(port);
+    }
+
+    /** Retorna {@code true} se a porta está dentro da faixa permitida para a disciplina. */
+    public static boolean isValidPort(int port) {
+        return port >= MIN_PORT && port <= MAX_PORT;
     }
 }
