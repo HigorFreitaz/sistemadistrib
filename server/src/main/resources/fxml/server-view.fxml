@@ -16,6 +16,51 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="br.edu.utfpr.sd.garagem.server.ui.ServerController">
+    <fx:define>
+        <!-- Fora do <tooltip> do badge de proposito: exibida/escondida na mao pelo
+             controller (ancorada abaixo do badge), para nao sobrepor o cursor e
+             entrar em loop de mostra/esconde (bug corrigido nesta versao). -->
+        <Tooltip fx:id="statusCodeTooltip" styleClass="status-code-tooltip">
+            <graphic>
+                <VBox spacing="10">
+                    <Label text="CODIGOS DE STATUS MAIS COMUNS" styleClass="tooltip-title"/>
+                    <Region styleClass="tooltip-divider"/>
+                    <VBox spacing="7">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-ok"/>
+                            <Label text="200" styleClass="tooltip-code"/>
+                            <Label text="OK — sucesso" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-warn"/>
+                            <Label text="400" styleClass="tooltip-code"/>
+                            <Label text="Bad Request — requisicao malformada ou dados invalidos" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-warn"/>
+                            <Label text="401" styleClass="tooltip-code"/>
+                            <Label text="Unauthorized — credenciais ou token invalidos/expirados" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-warn"/>
+                            <Label text="404" styleClass="tooltip-code"/>
+                            <Label text="Not Found — operacao (method) nao suportada" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-warn"/>
+                            <Label text="409" styleClass="tooltip-code"/>
+                            <Label text="Conflict — usuario ja cadastrado" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-error"/>
+                            <Label text="500" styleClass="tooltip-code"/>
+                            <Label text="Internal Error — erro inesperado no servidor" styleClass="tooltip-desc"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </graphic>
+        </Tooltip>
+    </fx:define>
     <top>
         <VBox>
             <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="14">
@@ -54,50 +99,7 @@
             </padding>
             <HBox spacing="6" alignment="CENTER_LEFT">
                 <Label text="Log do protocolo" styleClass="section-title"/>
-                <Label text="?" styleClass="help-badge">
-                    <tooltip>
-                        <Tooltip styleClass="status-code-tooltip" showDelay="150ms" showDuration="1m">
-                            <graphic>
-                                <VBox spacing="10">
-                                    <Label text="CODIGOS DE STATUS MAIS COMUNS" styleClass="tooltip-title"/>
-                                    <Region styleClass="tooltip-divider"/>
-                                    <VBox spacing="7">
-                                        <HBox spacing="10" alignment="CENTER_LEFT">
-                                            <Region styleClass="status-dot, status-dot-ok"/>
-                                            <Label text="200" styleClass="tooltip-code"/>
-                                            <Label text="OK — sucesso" styleClass="tooltip-desc"/>
-                                        </HBox>
-                                        <HBox spacing="10" alignment="CENTER_LEFT">
-                                            <Region styleClass="status-dot, status-dot-warn"/>
-                                            <Label text="400" styleClass="tooltip-code"/>
-                                            <Label text="Bad Request — requisicao malformada ou dados invalidos" styleClass="tooltip-desc"/>
-                                        </HBox>
-                                        <HBox spacing="10" alignment="CENTER_LEFT">
-                                            <Region styleClass="status-dot, status-dot-warn"/>
-                                            <Label text="401" styleClass="tooltip-code"/>
-                                            <Label text="Unauthorized — credenciais ou token invalidos/expirados" styleClass="tooltip-desc"/>
-                                        </HBox>
-                                        <HBox spacing="10" alignment="CENTER_LEFT">
-                                            <Region styleClass="status-dot, status-dot-warn"/>
-                                            <Label text="404" styleClass="tooltip-code"/>
-                                            <Label text="Not Found — operacao (method) nao suportada" styleClass="tooltip-desc"/>
-                                        </HBox>
-                                        <HBox spacing="10" alignment="CENTER_LEFT">
-                                            <Region styleClass="status-dot, status-dot-warn"/>
-                                            <Label text="409" styleClass="tooltip-code"/>
-                                            <Label text="Conflict — usuario ja cadastrado" styleClass="tooltip-desc"/>
-                                        </HBox>
-                                        <HBox spacing="10" alignment="CENTER_LEFT">
-                                            <Region styleClass="status-dot, status-dot-error"/>
-                                            <Label text="500" styleClass="tooltip-code"/>
-                                            <Label text="Internal Error — erro inesperado no servidor" styleClass="tooltip-desc"/>
-                                        </HBox>
-                                    </VBox>
-                                </VBox>
-                            </graphic>
-                        </Tooltip>
-                    </tooltip>
-                </Label>
+                <Label fx:id="statusCodeHelpBadge" text="?" styleClass="help-badge"/>
             </HBox>
             <TextArea fx:id="logArea" editable="false" wrapText="true" styleClass="log-area" VBox.vgrow="ALWAYS"/>
         </VBox>

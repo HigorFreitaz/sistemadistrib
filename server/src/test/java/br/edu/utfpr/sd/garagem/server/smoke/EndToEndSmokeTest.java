@@ -5,6 +5,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
 import br.edu.utfpr.sd.garagem.common.transport.MessageIO;
+import br.edu.utfpr.sd.garagem.server.net.ConnectedClientRegistry;
 import br.edu.utfpr.sd.garagem.server.net.GarageServer;
 import br.edu.utfpr.sd.garagem.server.net.RequestDispatcher;
 import br.edu.utfpr.sd.garagem.server.net.ServerEventListener;
@@ -47,7 +48,7 @@ class EndToEndSmokeTest {
         SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
         AuthService auth = new AuthService(users, sessions);
         RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
-        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener());
+        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), new ConnectedClientRegistry());
         server.start();
         int port = server.getPort();
         try {
@@ -75,7 +76,7 @@ class EndToEndSmokeTest {
         SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
         AuthService auth = new AuthService(users, sessions);
         RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
-        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener());
+        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), new ConnectedClientRegistry());
         server.start();
         int port = server.getPort();
         try {
@@ -86,6 +87,37 @@ class EndToEndSmokeTest {
             assertNotNull(token);
 
             doLogout(port, token, StatusCode.OK);
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    void encerrarTodasAsSessoesEmpurraAvisoParaClienteConectado() throws Exception {
+        Path dir = Files.createTempDirectory("sdgaragem-smoke-push");
+        JsonUserRepository users = new JsonUserRepository(dir.resolve("usuarios.json"));
+        SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
+        AuthService auth = new AuthService(users, sessions);
+        RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
+        ConnectedClientRegistry registry = new ConnectedClientRegistry();
+        GarageServer server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), registry);
+        server.start();
+        int port = server.getPort();
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("localhost", port), 3000);
+            try (BufferedReader reader = MessageIO.newReader(socket.getInputStream());
+                 PrintWriter writer = MessageIO.newWriter(socket.getOutputStream())) {
+                writer.println("{\"method\":\"login\",\"data\":{\"username\":\"admin\",\"password\":\"Admin@123\"}}");
+                Response loginResponse = JsonSupport.GSON.fromJson(reader.readLine(), Response.class);
+                assertEquals(StatusCode.OK, loginResponse.getStatusCode());
+
+                // sem o cliente pedir nada, o operador encerra todas as sessoes
+                registry.pushToAllAndForget(Response.error(StatusCode.SERVICE_UNAVAILABLE, "Servidor em manutencao"));
+
+                Response pushed = JsonSupport.GSON.fromJson(reader.readLine(), Response.class);
+                assertEquals(StatusCode.SERVICE_UNAVAILABLE, pushed.getStatusCode());
+                assertEquals("Servidor em manutencao", pushed.getMessage());
+            }
         } finally {
             server.stop();
         }

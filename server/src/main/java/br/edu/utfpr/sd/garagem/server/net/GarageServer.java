@@ -24,16 +24,19 @@ public final class GarageServer {
     private final int port;
     private final RequestDispatcher dispatcher;
     private final ServerEventListener listener;
+    private final ConnectedClientRegistry registry;
     private final AtomicInteger connectedClients = new AtomicInteger();
 
     private ExecutorService pool;
     private ServerSocket serverSocket;
     private volatile boolean running;
 
-    public GarageServer(int port, RequestDispatcher dispatcher, ServerEventListener listener) {
+    public GarageServer(int port, RequestDispatcher dispatcher, ServerEventListener listener,
+                         ConnectedClientRegistry registry) {
         this.port = port;
         this.dispatcher = dispatcher;
         this.listener = listener;
+        this.registry = registry;
     }
 
     /** Abre o server socket e começa a aceitar conexões em segundo plano. */
@@ -71,7 +74,7 @@ public final class GarageServer {
 
     private void runClient(Socket socket) {
         try {
-            new ClientHandler(socket, dispatcher, listener).run();
+            new ClientHandler(socket, dispatcher, listener, registry).run();
         } finally {
             listener.onClientCountChanged(connectedClients.decrementAndGet());
         }
