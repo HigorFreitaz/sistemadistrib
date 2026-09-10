@@ -66,7 +66,11 @@ class EndToEndSmokeTest {
         }
 
         Thread.sleep(200);
-        assertThrows(ConnectException.class, () -> new Socket().connect(new InetSocketAddress("localhost", port), 1000));
+        assertThrows(ConnectException.class, () -> {
+            try (Socket probe = new Socket()) {
+                probe.connect(new InetSocketAddress("localhost", port), 1000);
+            }
+        });
     }
 
     @Test

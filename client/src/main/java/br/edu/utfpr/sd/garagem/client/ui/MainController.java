@@ -35,14 +35,17 @@ public final class MainController {
     private Button logoutButton;
 
     private ClienteApp app;
-    private String token;
     private SocketConnector connector;
     private volatile boolean listening;
 
-    /** Preenche a tela com os dados da sessão aberta no login. */
+    /**
+     * Preenche a tela com os dados da sessão aberta no login. O parâmetro
+     * {@code token} ainda não é usado aqui — "Sair" só avisa que não foi
+     * implementado (ver {@link #handleLogout}) — mas fica na assinatura
+     * porque é o que a implementação real de logout vai precisar.
+     */
     public void init(ClienteApp app, String username, String token, SocketConnector connector) {
         this.app = app;
-        this.token = token;
         this.connector = connector;
         usernameLabel.setText("Bem-vindo, " + username);
         startPushListener();
