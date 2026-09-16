@@ -89,7 +89,7 @@ class EndToEndSmokeTest {
 
     @Test
     void cadastraNovoUsuarioELoga() throws Exception {
-        doRegister("novo.usuario", "SenhaForte9", StatusCode.OK);
+        doRegister("novo.usuario", "SenhaForte9", StatusCode.CREATED);
         doRegister("novo.usuario", "OutraSenha9", StatusCode.CONFLICT);
 
         String token = doLogin("novo.usuario", "SenhaForte9", StatusCode.OK);
@@ -105,7 +105,7 @@ class EndToEndSmokeTest {
      */
     @Test
     void logoutAllAvisaClientesConectados() throws Exception {
-        doRegister("outro.usuario", "SenhaForte9", StatusCode.OK);
+        doRegister("outro.usuario", "SenhaForte9", StatusCode.CREATED);
 
         try (TestClient admin = new TestClient(port); TestClient outro = new TestClient(port)) {
             admin.login("admin", "Admin@123", StatusCode.OK);

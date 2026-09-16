@@ -32,6 +32,11 @@
                             <Label text="OK — sucesso" styleClass="tooltip-desc"/>
                         </HBox>
                         <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-ok"/>
+                            <Label text="201" styleClass="tooltip-code"/>
+                            <Label text="Created — cadastro realizado" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
                             <Region styleClass="status-dot, status-dot-warn"/>
                             <Label text="400" styleClass="tooltip-code"/>
                             <Label text="Bad Request — requisicao malformada ou dados invalidos" styleClass="tooltip-desc"/>
@@ -55,6 +60,11 @@
                             <Region styleClass="status-dot, status-dot-error"/>
                             <Label text="500" styleClass="tooltip-code"/>
                             <Label text="Internal Error — erro inesperado no servidor" styleClass="tooltip-desc"/>
+                        </HBox>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Region styleClass="status-dot, status-dot-error"/>
+                            <Label text="503" styleClass="tooltip-code"/>
+                            <Label text="Unavailable — servidor parado ou em manutencao" styleClass="tooltip-desc"/>
                         </HBox>
                     </VBox>
                 </VBox>

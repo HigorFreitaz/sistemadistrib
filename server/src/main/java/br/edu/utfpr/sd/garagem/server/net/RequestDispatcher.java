@@ -99,7 +99,7 @@ public final class RequestDispatcher {
         }
         boolean created = authService.register(request.getUsername(), request.getPassword());
         return created
-                ? Response.ok("Cadastro realizado com sucesso", null)
+                ? Response.created("Cadastro realizado com sucesso", null)
                 : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
     }
 

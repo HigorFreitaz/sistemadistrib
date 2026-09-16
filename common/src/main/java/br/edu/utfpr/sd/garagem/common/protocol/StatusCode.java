@@ -10,6 +10,9 @@ public final class StatusCode {
     /** Requisição processada com sucesso. */
     public static final int OK = 200;
 
+    /** Recurso criado com sucesso (ex.: cadastro de usuário). */
+    public static final int CREATED = 201;
+
     /** Requisição malformada ou com dados que falharam na validação. */
     public static final int BAD_REQUEST = 400;
 

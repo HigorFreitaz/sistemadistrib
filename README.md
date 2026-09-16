@@ -86,7 +86,7 @@ separadamente.
 ```
 ```json
 // sucesso
-{"statusCode":200,"message":"Cadastro realizado com sucesso","data":null}
+{"statusCode":201,"message":"Cadastro realizado com sucesso","data":null}
 // username ja existe
 {"statusCode":409,"message":"Usuario ja cadastrado","data":null}
 ```
@@ -107,10 +107,11 @@ separadamente.
 ### Códigos de status
 
 Centralizados em `common.protocol.StatusCode`, com semântica de HTTP:
-`200` sucesso, `400` requisição malformada ou fora do formato, `401`
-credenciais ou token inválidos, `404` operação não suportada, `409`
-conflito (username já cadastrado), `500` erro interno, `503` servidor
-indisponível (operador encerrou a sessão ou parou o servidor).
+`200` sucesso, `201` recurso criado (cadastro), `400` requisição
+malformada ou fora do formato, `401` credenciais ou token inválidos,
+`404` operação não suportada, `409` conflito (username já cadastrado),
+`500` erro interno, `503` servidor indisponível (operador encerrou a
+sessão ou parou o servidor).
 
 ## Requisitos não funcionais de validação
 
