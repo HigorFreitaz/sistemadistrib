@@ -7,6 +7,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.LoginRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
+import com.google.gson.JsonSyntaxException;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -110,8 +111,18 @@ public final class LoginController {
         setLoading(false);
         Response response = outcome.response();
         if (response.getStatusCode() == StatusCode.OK) {
-            TokenData tokenData = JsonSupport.GSON.fromJson(response.getData(), TokenData.class);
-            app.showMain(username, tokenData.getToken(), outcome.connector());
+            try {
+                TokenData tokenData = JsonSupport.GSON.fromJson(response.getData(), TokenData.class);
+                app.showMain(username, tokenData.getToken(), outcome.connector());
+            } catch (JsonSyntaxException e) {
+                // servidor de outra implementacao respondendo num formato de
+                // "data" diferente do nosso (ex.: testando contra o servidor
+                // de outro grupo) -- avisa em vez de deixar a excecao
+                // silenciosa travar a tela sem feedback nenhum.
+                LOGGER.log(Level.WARNING, "resposta de login em formato inesperado", e);
+                showErrorNotification("O servidor respondeu num formato inesperado.");
+                outcome.connector().close();
+            }
         } else {
             // mensagem sempre genérica, independente do motivo devolvido pelo
             // servidor — não revelar se foi o usuario ou a senha que falhou.

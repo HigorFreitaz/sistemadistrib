@@ -2,6 +2,7 @@ package br.edu.utfpr.sd.garagem.client.ui;
 
 import br.edu.utfpr.sd.garagem.client.net.SocketConnector;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import com.google.gson.JsonSyntaxException;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -89,6 +90,15 @@ public final class MainController {
                 // ocioso dentro do timeout de leitura do socket -- sem
                 // noticia do servidor nesse intervalo nao e erro, so
                 // continua esperando.
+            } catch (JsonSyntaxException e) {
+                // mensagem nao bate com o formato esperado (ex.: testando
+                // contra o servidor de outro grupo) -- encerra a escuta em
+                // vez de deixar a excecao silenciosa matar a thread sem
+                // nenhum log.
+                if (listening) {
+                    LOGGER.log(Level.WARNING, "mensagem do servidor em formato inesperado, escuta encerrada", e);
+                }
+                return;
             } catch (IOException e) {
                 if (listening) {
                     LOGGER.log(Level.FINE, "escuta de avisos do servidor encerrada", e);
