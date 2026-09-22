@@ -24,8 +24,17 @@ public final class Response {
 
     /** Constrói uma resposta de sucesso, convertendo {@code data} para JSON. */
     public static Response ok(String message, Object data) {
+        return success(StatusCode.OK, message, data);
+    }
+
+    /** Como {@link #ok}, mas para quando a operação criou um recurso novo (ex.: cadastro). */
+    public static Response created(String message, Object data) {
+        return success(StatusCode.CREATED, message, data);
+    }
+
+    private static Response success(int statusCode, String message, Object data) {
         JsonElement json = data == null ? JsonNull.INSTANCE : JsonSupport.GSON.toJsonTree(data);
-        return new Response(StatusCode.OK, message, json);
+        return new Response(statusCode, message, json);
     }
 
     /** Constrói uma resposta de erro, sem dado associado. */

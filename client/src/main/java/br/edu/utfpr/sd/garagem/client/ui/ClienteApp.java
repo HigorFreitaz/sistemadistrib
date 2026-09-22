@@ -1,6 +1,5 @@
 package br.edu.utfpr.sd.garagem.client.ui;
 
-import br.edu.utfpr.sd.garagem.client.net.SocketConnector;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -70,12 +69,12 @@ public final class ClienteApp extends Application {
     }
 
     /** Exibe a tela principal pós-login, com a sessão já aberta. */
-    void showMain(String username, String token, SocketConnector connector) {
+    void showMain(String username, String token) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main-view.fxml"));
             Parent root = loader.load();
             MainController controller = loader.getController();
-            controller.init(this, username, token, connector);
+            controller.init(this, username, token);
             setScene(root);
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a tela principal", e);

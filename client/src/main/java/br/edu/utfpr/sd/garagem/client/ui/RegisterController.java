@@ -14,6 +14,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Region;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,6 +74,10 @@ public final class RegisterController {
 
     @FXML
     private void initialize() {
+        for (Label hint : new Label[] {usernameLengthHint, usernameCharsetHint, passwordLengthHint,
+                passwordCharsetHint, confirmPasswordHint}) {
+            attachHintDot(hint);
+        }
         usernameField.textProperty().addListener((obs, old, value) -> validateUsername());
         passwordField.textProperty().addListener((obs, old, value) -> {
             validatePassword();
@@ -82,6 +87,19 @@ public final class RegisterController {
         validateUsername();
         validatePassword();
         validateConfirmPassword();
+    }
+
+    /**
+     * Dá ao hint um indicador em forma de bolinha (desenhado via CSS) em vez
+     * de prefixar o texto com um símbolo Unicode (✓/•): a fonte instalada em
+     * cada máquina pode não ter esse glifo, e o fallback aparece como um
+     * quadrado vazio — fácil de confundir com um ícone de erro.
+     */
+    private static void attachHintDot(Label hint) {
+        Region dot = new Region();
+        dot.getStyleClass().add("hint-dot");
+        hint.setGraphic(dot);
+        hint.setGraphicTextGap(6);
     }
 
     private void validateUsername() {
@@ -105,9 +123,10 @@ public final class RegisterController {
         updateRegisterButtonState();
     }
 
-    /** Marca um item do checklist como satisfeito (verde, com "✓") ou pendente (vermelho, com "•"). */
+    /** Marca um item do checklist como satisfeito (bolinha verde) ou pendente (bolinha vermelha). */
     private static void setHint(Label hint, String text, boolean satisfied) {
-        hint.setText((satisfied ? "✓ " : "• ") + text);
+        hint.setText(text);
+        hint.getGraphic().getStyleClass().setAll("hint-dot", satisfied ? "hint-dot-valid" : "hint-dot-invalid");
         hint.getStyleClass().setAll(satisfied ? "hint-valid" : "hint-invalid");
     }
 
@@ -140,7 +159,7 @@ public final class RegisterController {
 
     private void onRegisterSucceeded(Response response, String username) {
         setLoading(false);
-        if (response.getStatusCode() == StatusCode.OK) {
+        if (response.getStatusCode() == StatusCode.CREATED) {
             app.showLogin(username);
         } else {
             statusLabel.setText(response.getMessage());

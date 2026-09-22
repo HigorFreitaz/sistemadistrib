@@ -17,10 +17,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Conexão de socket TCP com o servidor, usada por toda a sessão do cliente
- * (aberta no login, reaproveitada até o logout). Traduz qualquer falha de
- * rede em {@link ConnectionException} com mensagem amigável, nunca deixando
- * uma exceção crua chegar à GUI.
+ * Conexão de socket TCP com o servidor, para uma única requisição: conecta,
+ * manda uma linha, lê a resposta, fecha (ver {@code try-with-resources} nos
+ * controllers). Traduz qualquer falha de rede em {@link ConnectionException}
+ * com mensagem amigável, nunca deixando uma exceção crua chegar à GUI.
  */
 public final class SocketConnector implements AutoCloseable {
 
@@ -83,21 +83,6 @@ public final class SocketConnector implements AutoCloseable {
         } catch (IOException e) {
             throw new ConnectionException("Falha de comunicação com o servidor.", e);
         }
-    }
-
-    /**
-     * Bloqueia esperando uma mensagem que o servidor mande fora do ciclo
-     * requisição/resposta normal (ex.: aviso do operador). Ao contrário de
-     * {@link #send}, propaga {@link SocketTimeoutException} sem embrulhar —
-     * quem chama usa isso para distinguir "ninguém mandou nada ainda" (ocioso,
-     * continue esperando) de uma falha real de conexão.
-     */
-    public Response awaitPush() throws IOException {
-        String line = reader.readLine();
-        if (line == null) {
-            throw new IOException("conexão encerrada pelo servidor");
-        }
-        return JsonSupport.GSON.fromJson(line, Response.class);
     }
 
     @Override

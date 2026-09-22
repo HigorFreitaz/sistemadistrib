@@ -10,6 +10,9 @@ public final class StatusCode {
     /** Requisição processada com sucesso. */
     public static final int OK = 200;
 
+    /** Recurso criado com sucesso (ex.: cadastro de usuário). */
+    public static final int CREATED = 201;
+
     /** Requisição malformada ou com dados que falharam na validação. */
     public static final int BAD_REQUEST = 400;
 
@@ -24,9 +27,6 @@ public final class StatusCode {
 
     /** Erro inesperado no servidor. */
     public static final int INTERNAL_ERROR = 500;
-
-    /** Servidor indisponivel (ex.: operador encerrou a sessao do cliente). */
-    public static final int SERVICE_UNAVAILABLE = 503;
 
     private StatusCode() {
     }

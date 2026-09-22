@@ -33,7 +33,7 @@ public final class RequestDispatcher {
     }
 
     /** Processa uma linha recebida do cliente e devolve a resposta a ser enviada. */
-    public Response dispatch(String rawLine, ClientSession session) {
+    public Response dispatch(String rawLine) {
         JsonObject envelope;
         try {
             envelope = JsonParser.parseString(rawLine).getAsJsonObject();
@@ -46,8 +46,8 @@ public final class RequestDispatcher {
         }
         String method = methodElement.getAsString();
         return switch (method) {
-            case Methods.LOGIN -> handleLogin(envelope, session);
-            case Methods.LOGOUT -> handleLogout(envelope, session);
+            case Methods.LOGIN -> handleLogin(envelope);
+            case Methods.LOGOUT -> handleLogout(envelope);
             case Methods.REGISTER -> handleRegister(envelope);
             // TODO EP-2: registrar aqui os demais methods do protocolo (CRUD
             // de vagas/operacoes, CRUD admin), cada um delegando a um
@@ -57,7 +57,7 @@ public final class RequestDispatcher {
         };
     }
 
-    private Response handleLogin(JsonObject envelope, ClientSession session) {
+    private Response handleLogin(JsonObject envelope) {
         LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
         if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
             return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
@@ -66,28 +66,26 @@ public final class RequestDispatcher {
         // mensagens distintas por caso, conforme o fluxo documentado em
         // docs/Requisitos Funcionais e nao funcionais.docx (ver LoginResult)
         return switch (result.getStatus()) {
-            case SUCCESS -> onLoginSuccess(result.getSession(), session);
+            case SUCCESS -> onLoginSuccess(result.getSession());
             case USER_NOT_FOUND -> Response.error(StatusCode.UNAUTHORIZED, "Usuario nao encontrado");
             case WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Senha incorreta");
         };
     }
 
-    private Response onLoginSuccess(Session session, ClientSession clientSession) {
+    private Response onLoginSuccess(Session session) {
         listener.onSessionCountChanged(authService.activeSessionCount());
-        clientSession.bindToken(session.getToken());
-        return Response.ok("Login realizado com sucesso", new TokenData(session.getToken()));
+        return Response.ok("Sucesso no Login", new TokenData(session.getToken()));
     }
 
-    private Response handleLogout(JsonObject envelope, ClientSession session) {
+    private Response handleLogout(JsonObject envelope) {
         LogoutRequest request = JsonSupport.GSON.fromJson(envelope, LogoutRequest.class);
         if (request.getToken() == null || request.getToken().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Token nao informado");
         }
         boolean removed = authService.logout(request.getToken());
         if (removed) {
-            session.unbindToken();
             listener.onSessionCountChanged(authService.activeSessionCount());
-            return Response.ok("Logout realizado com sucesso", null);
+            return Response.ok("Usuário deslogado com sucesso", null);
         }
         return Response.error(StatusCode.UNAUTHORIZED, "Token invalido ou sessao inexistente");
     }
@@ -99,7 +97,7 @@ public final class RequestDispatcher {
         }
         boolean created = authService.register(request.getUsername(), request.getPassword());
         return created
-                ? Response.ok("Cadastro realizado com sucesso", null)
+                ? Response.created("Usuário criado com sucesso", null)
                 : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
     }
 

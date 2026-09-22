@@ -72,6 +72,21 @@
     -fx-text-fill: #1C8A4C;
     -fx-font-size: 11px;
 }
+/* bolinha do checklist de cadastro, desenhada em CSS em vez de um glifo
+   Unicode (✓/•) -- o glifo depende da fonte instalada em cada maquina. */
+.hint-dot {
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+    -fx-background-radius: 50%;
+}
+.hint-dot-invalid {
+    -fx-background-color: #C23B3B;
+}
+.hint-dot-valid {
+    -fx-background-color: #1C8A4C;
+}
 
 /* ---- campos de entrada ----
    -fx-background-insets/-fx-border-insets zerados porque o estilo padrao

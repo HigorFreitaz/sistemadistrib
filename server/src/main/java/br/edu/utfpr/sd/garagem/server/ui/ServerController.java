@@ -1,9 +1,6 @@
 package br.edu.utfpr.sd.garagem.server.ui;
 
-import br.edu.utfpr.sd.garagem.common.protocol.Response;
-import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.server.config.ServerProperties;
-import br.edu.utfpr.sd.garagem.server.net.ConnectedClientRegistry;
 import br.edu.utfpr.sd.garagem.server.net.GarageServer;
 import br.edu.utfpr.sd.garagem.server.net.RequestDispatcher;
 import br.edu.utfpr.sd.garagem.server.net.ServerEventListener;
@@ -67,7 +64,6 @@ public final class ServerController implements ServerEventListener {
 
     private GarageServer server;
     private AuthService authService;
-    private ConnectedClientRegistry clientRegistry;
 
     /**
      * Mostra/esconde o tooltip de ajuda na mao, ancorado abaixo do badge, em
@@ -116,9 +112,8 @@ public final class ServerController implements ServerEventListener {
         UserRepository userRepository = new JsonUserRepository(USERS_FILE);
         SessionRepository sessionRepository = new JsonSessionRepository(SESSIONS_FILE);
         authService = new AuthService(userRepository, new SessionService(sessionRepository));
-        clientRegistry = new ConnectedClientRegistry();
         RequestDispatcher dispatcher = new RequestDispatcher(authService, this);
-        server = new GarageServer(port, dispatcher, this, clientRegistry);
+        server = new GarageServer(port, dispatcher, this);
         try {
             server.start();
         } catch (IOException e) {
@@ -138,8 +133,6 @@ public final class ServerController implements ServerEventListener {
             return;
         }
         authService.logoutAllSessions();
-        clientRegistry.broadcast(Response.error(StatusCode.SERVICE_UNAVAILABLE,
-                "Servidor em manutencao. Sua sessao foi encerrada pelo administrador."));
         onSessionCountChanged(authService.activeSessionCount());
         appendLog("Todas as sessoes foram encerradas pelo operador do servidor.");
     }
