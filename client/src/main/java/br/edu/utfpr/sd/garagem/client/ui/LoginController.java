@@ -24,12 +24,13 @@ import java.util.logging.Logger;
 /**
  * Controller da tela de login: delega a autenticação ao
  * {@link SocketConnector} em uma thread de segundo plano, para não travar
- * a interface. Não julga o formato de usuário/senha enquanto o usuário
- * digita — ao contrário do cadastro, aqui a senha já existe, e reagir em
- * tempo real a cada tecla só vazaria informação sobre a política de senha
- * sem necessidade. Qualquer falha (credenciais erradas, rede fora do ar)
- * aparece como uma notificação avulsa, nunca como texto fixo empurrando o
- * formulário.
+ * a interface. A conexão é aberta, usada uma única vez e fechada nessa
+ * mesma thread — não fica nada aberto pra reaproveitar depois. Não julga
+ * o formato de usuário/senha enquanto o usuário digita — ao contrário do
+ * cadastro, aqui a senha já existe, e reagir em tempo real a cada tecla só
+ * vazaria informação sobre a política de senha sem necessidade. Qualquer
+ * falha (credenciais erradas, rede fora do ar) aparece como uma
+ * notificação avulsa, nunca como texto fixo empurrando o formulário.
  */
 public final class LoginController {
 
@@ -53,9 +54,6 @@ public final class LoginController {
 
     private ClienteApp app;
     private boolean loading;
-
-    private record LoginOutcome(SocketConnector connector, Response response) {
-    }
 
     /** Recebe a referência à aplicação, para poder trocar de tela após o login. */
     public void init(ClienteApp app) {
@@ -93,13 +91,13 @@ public final class LoginController {
         String password = passwordField.getText();
 
         setLoading(true);
-        Task<LoginOutcome> task = new Task<>() {
+        Task<Response> task = new Task<>() {
             @Override
-            protected LoginOutcome call() throws ConnectionException {
-                SocketConnector connector = new SocketConnector(host, port);
-                connector.connect();
-                Response response = connector.send(new LoginRequest(username, password));
-                return new LoginOutcome(connector, response);
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new LoginRequest(username, password));
+                }
             }
         };
         task.setOnSucceeded(event -> onLoginSucceeded(task.getValue(), username));
@@ -107,13 +105,12 @@ public final class LoginController {
         TaskRunner.runInBackground(task, "login-task");
     }
 
-    private void onLoginSucceeded(LoginOutcome outcome, String username) {
+    private void onLoginSucceeded(Response response, String username) {
         setLoading(false);
-        Response response = outcome.response();
         if (response.getStatusCode() == StatusCode.OK) {
             try {
                 TokenData tokenData = JsonSupport.GSON.fromJson(response.getData(), TokenData.class);
-                app.showMain(username, tokenData.getToken(), outcome.connector());
+                app.showMain(username, tokenData.getToken());
             } catch (JsonSyntaxException e) {
                 // servidor de outra implementacao respondendo num formato de
                 // "data" diferente do nosso (ex.: testando contra o servidor
@@ -121,13 +118,11 @@ public final class LoginController {
                 // silenciosa travar a tela sem feedback nenhum.
                 LOGGER.log(Level.WARNING, "resposta de login em formato inesperado", e);
                 showErrorNotification("O servidor respondeu num formato inesperado.");
-                outcome.connector().close();
             }
         } else {
             // mensagem sempre genérica, independente do motivo devolvido pelo
             // servidor — não revelar se foi o usuario ou a senha que falhou.
             showErrorNotification(INVALID_CREDENTIALS_MESSAGE);
-            outcome.connector().close();
         }
     }
 

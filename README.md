@@ -110,8 +110,7 @@ Centralizados em `common.protocol.StatusCode`, com semântica de HTTP:
 `200` sucesso, `201` recurso criado (cadastro), `400` requisição
 malformada ou fora do formato, `401` credenciais ou token inválidos,
 `404` operação não suportada, `409` conflito (username já cadastrado),
-`500` erro interno, `503` servidor indisponível (operador encerrou a
-sessão ou parou o servidor).
+`500` erro interno.
 
 ## Requisitos não funcionais de validação
 
@@ -197,6 +196,12 @@ de travar o desenvolvimento.
 - Pool de threads fixo em 50 conexões simultâneas (`GarageServer`).
 - `dados/` e `server.properties` ficam relativos ao diretório de
   trabalho, não empacotados como recurso — dá pra editar sem recompilar.
+- Cada requisição abre sua própria conexão TCP: o cliente conecta, manda
+  uma linha, lê a resposta e fecha (`ClientHandler` processa uma única
+  linha por conexão e encerra). Não existe socket persistente entre
+  requisições nem aviso do servidor pro cliente fora desse ciclo — se o
+  token de alguém for invalidado (ex.: outra sessão do mesmo usuário), o
+  cliente só descobre na próxima vez que usar o token.
 
 ## Próximas entregas
 

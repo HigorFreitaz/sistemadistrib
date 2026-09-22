@@ -61,11 +61,6 @@
                             <Label text="500" styleClass="tooltip-code"/>
                             <Label text="Internal Error — erro inesperado no servidor" styleClass="tooltip-desc"/>
                         </HBox>
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Region styleClass="status-dot, status-dot-error"/>
-                            <Label text="503" styleClass="tooltip-code"/>
-                            <Label text="Unavailable — servidor parado ou em manutencao" styleClass="tooltip-desc"/>
-                        </HBox>
                     </VBox>
                 </VBox>
             </graphic>

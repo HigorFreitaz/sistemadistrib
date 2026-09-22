@@ -5,7 +5,6 @@ import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.protocol.TokenData;
 import br.edu.utfpr.sd.garagem.common.transport.MessageIO;
-import br.edu.utfpr.sd.garagem.server.net.ConnectedClientRegistry;
 import br.edu.utfpr.sd.garagem.server.net.GarageServer;
 import br.edu.utfpr.sd.garagem.server.net.RequestDispatcher;
 import br.edu.utfpr.sd.garagem.server.net.ServerEventListener;
@@ -25,7 +24,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -43,7 +41,6 @@ class EndToEndSmokeTest {
     private static final int EPHEMERAL_PORT = 0;
     private static final int CONNECT_TIMEOUT_MS = 3000;
 
-    private ConnectedClientRegistry registry;
     private GarageServer server;
     private int port;
 
@@ -62,8 +59,7 @@ class EndToEndSmokeTest {
         SessionService sessions = new SessionService(new JsonSessionRepository(dir.resolve("sessoes.json")));
         AuthService auth = new AuthService(users, sessions);
         RequestDispatcher dispatcher = new RequestDispatcher(auth, new NoOpListener());
-        registry = new ConnectedClientRegistry();
-        server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener(), registry);
+        server = new GarageServer(EPHEMERAL_PORT, dispatcher, new NoOpListener());
         server.start();
         port = server.getPort();
     }
@@ -98,42 +94,18 @@ class EndToEndSmokeTest {
         doLogout(token, StatusCode.OK);
     }
 
-    /**
-     * Com dois clientes conectados (não só um) porque foi exatamente esse o
-     * bug relatado em produção: o broadcast entregava pro primeiro cliente
-     * e esquecia do resto.
-     */
+    /** Uma conexão TCP por requisição: o servidor fecha a conexão assim que responde. */
     @Test
-    void logoutAllAvisaClientesConectados() throws Exception {
-        doRegister("outro.usuario", "SenhaForte9", StatusCode.CREATED);
-
-        try (TestClient admin = new TestClient(port); TestClient outro = new TestClient(port)) {
-            admin.login("admin", "Admin@123", StatusCode.OK);
-            outro.login("outro.usuario", "SenhaForte9", StatusCode.OK);
-
-            // sem os clientes pedirem nada, o operador encerra todas as sessoes
-            registry.broadcast(Response.error(StatusCode.SERVICE_UNAVAILABLE, "Servidor em manutencao"));
-
-            for (TestClient client : List.of(admin, outro)) {
-                Response pushed = client.nextResponse();
-                assertEquals(StatusCode.SERVICE_UNAVAILABLE, pushed.getStatusCode(), "cliente nao recebeu o aviso");
-                assertEquals("Servidor em manutencao", pushed.getMessage());
-            }
+    void servidorFechaConexaoAposResponder() throws Exception {
+        try (TestClient client = new TestClient(port)) {
+            client.login("admin", "Admin@123", StatusCode.OK);
+            assertTrue(client.isClosedByPeer(), "servidor deveria fechar a conexao logo apos responder");
         }
     }
 
-    /** Cobre as duas consequências de parar o servidor: quem já estava logado é avisado/desconectado, e a porta para de aceitar conexão nova. */
     @Test
-    void pararServidorDesconectaCliente() throws Exception {
-        try (TestClient client = new TestClient(port)) {
-            client.login("admin", "Admin@123", StatusCode.OK);
-
-            server.stop(); // o operador clica em "Parar" com o cliente ainda logado
-
-            assertEquals(StatusCode.SERVICE_UNAVAILABLE, client.nextResponse().getStatusCode());
-            assertTrue(client.isClosedByPeer(), "servidor nao fechou a conexao do cliente ao parar");
-        }
-
+    void pararServidorRecusaNovasConexoes() throws Exception {
+        server.stop();
         Thread.sleep(200);
         assertThrows(ConnectException.class, () -> {
             try (Socket probe = new Socket()) {
