@@ -75,7 +75,7 @@ public final class RequestDispatcher {
     private Response onLoginSuccess(Session session, ClientSession clientSession) {
         listener.onSessionCountChanged(authService.activeSessionCount());
         clientSession.bindToken(session.getToken());
-        return Response.ok("Login realizado com sucesso", new TokenData(session.getToken()));
+        return Response.ok("Sucesso no Login", new TokenData(session.getToken()));
     }
 
     private Response handleLogout(JsonObject envelope, ClientSession session) {
@@ -87,7 +87,7 @@ public final class RequestDispatcher {
         if (removed) {
             session.unbindToken();
             listener.onSessionCountChanged(authService.activeSessionCount());
-            return Response.ok("Logout realizado com sucesso", null);
+            return Response.ok("Usuário deslogado com sucesso", null);
         }
         return Response.error(StatusCode.UNAUTHORIZED, "Token invalido ou sessao inexistente");
     }
@@ -99,7 +99,7 @@ public final class RequestDispatcher {
         }
         boolean created = authService.register(request.getUsername(), request.getPassword());
         return created
-                ? Response.created("Cadastro realizado com sucesso", null)
+                ? Response.created("Usuário criado com sucesso", null)
                 : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
     }
 

@@ -68,7 +68,7 @@ sempre em UTF-8, lido com `BufferedReader.readLine()` e escrito com
 ```
 ```json
 // sucesso
-{"statusCode":200,"message":"Login realizado com sucesso","data":{"token":"3fa2...uuid"}}
+{"statusCode":200,"message":"Sucesso no Login","data":{"token":"3fa2...uuid"}}
 // usuario nao encontrado
 {"statusCode":401,"message":"Usuario nao encontrado","data":null}
 // senha incorreta
@@ -86,7 +86,7 @@ separadamente.
 ```
 ```json
 // sucesso
-{"statusCode":201,"message":"Cadastro realizado com sucesso","data":null}
+{"statusCode":201,"message":"Usuário criado com sucesso","data":null}
 // username ja existe
 {"statusCode":409,"message":"Usuario ja cadastrado","data":null}
 ```
@@ -99,7 +99,7 @@ separadamente.
 ```
 ```json
 // sucesso
-{"statusCode":200,"message":"Logout realizado com sucesso","data":null}
+{"statusCode":200,"message":"Usuário deslogado com sucesso","data":null}
 // token invalido ou ja expirado
 {"statusCode":401,"message":"Token invalido ou sessao inexistente","data":null}
 ```
