@@ -43,7 +43,7 @@ public final class ClientHandler implements Runnable {
              PrintWriter out = MessageIO.newWriter(connection.getOutputStream())) {
             String line = reader.readLine();
             if (line != null) {
-                listener.onLog("<- " + LogMasking.maskPassword(line));
+                listener.onLog("[CLIENTE] " + LogMasking.maskPassword(line));
                 Response response;
                 try {
                     response = dispatcher.dispatch(line);
@@ -57,7 +57,7 @@ public final class ClientHandler implements Runnable {
                 }
                 String json = JsonSupport.GSON.toJson(response);
                 out.println(json);
-                listener.onLog("-> " + json);
+                listener.onLog("[SERVIDOR] " + json);
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "conexao encerrada com erro (" + remote + "): " + e.getMessage());

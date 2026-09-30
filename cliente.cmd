@@ -4,5 +4,7 @@ rem arquivo mais de uma vez -- um clique por cliente -- para testar varios
 rem clientes conectados ao mesmo tempo no mesmo servidor.
 if "%JAVA_HOME%"=="" set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot"
 set "ROOT=%~dp0"
+echo Instalando modulo common...
+call "%ROOT%mvnw.cmd" -q -pl common install -DskipTests
 cd /d "%ROOT%client"
 call "%ROOT%mvnw.cmd" -q javafx:run
