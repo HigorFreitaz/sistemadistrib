@@ -1,16 +1,25 @@
 package br.edu.utfpr.sd.garagem.client.ui;
 
+import br.edu.utfpr.sd.garagem.client.net.ConnectionException;
+import br.edu.utfpr.sd.garagem.client.net.SocketConnector;
+import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- * Controller da tela principal pós-login: mostra o usuário logado. O
- * restante da tela é espaço reservado para o painel de vagas da EP-2.
+ * Controller da tela principal pós-login: mostra o usuário logado e dá
+ * acesso à tela de perfil. O restante da tela é espaço reservado para o
+ * painel de vagas da EP-2.
  */
 public final class MainController {
+
+    private static final Logger LOGGER = Logger.getLogger(MainController.class.getName());
 
     @FXML
     private Label usernameLabel;
@@ -18,32 +27,61 @@ public final class MainController {
     private Label statusLabel;
     @FXML
     private Button logoutButton;
+    @FXML
+    private Button profileButton;
 
     private ClienteApp app;
+    private String host;
+    private int port;
+    private String username;
+    private String token;
+    private boolean loading;
 
-    /**
-     * Preenche a tela com os dados da sessão aberta no login. Nem
-     * {@code app} nem {@code token} são usados aqui ainda — "Sair" só
-     * avisa que não foi implementado (ver {@link #handleLogout}) — mas
-     * ambos ficam na assinatura porque é o que a implementação real de
-     * logout vai precisar: {@code app} pra voltar à tela de login, e
-     * {@code token} pra montar a própria conexão (cada requisição abre a
-     * sua e fecha em seguida — não há conexão aberta da sessão pra
-     * reaproveitar).
-     */
-    public void init(ClienteApp app, String username, String token) {
+    /** Preenche a tela com os dados da sessão aberta no login. */
+    public void init(ClienteApp app, String host, int port, String username, String token) {
         this.app = app;
+        this.host = host;
+        this.port = port;
+        this.username = username;
+        this.token = token;
         usernameLabel.setText("Bem-vindo, " + username);
     }
 
-    /**
-     * Ainda não implementado: sair de verdade exige encerrar a sessão no
-     * servidor e voltar para o login — por ora só avisa.
-     */
+    @FXML
+    private void handleOpenProfile() {
+        app.showProfile(host, port, username, token);
+    }
+
     @FXML
     private void handleLogout() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, "Funcionalidade ainda nao implementada.", ButtonType.OK);
-        alert.setHeaderText(null);
-        alert.showAndWait();
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new LogoutRequest(token));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> onLogoutFinished());
+        task.setOnFailed(event -> {
+            LOGGER.log(Level.WARNING, "falha ao efetuar logout", task.getException());
+            onLogoutFinished();
+        });
+        TaskRunner.runInBackground(task, "logout-task");
+    }
+
+    /** Volta para o login independente do resultado — o token, se ainda válido, só ficaria sem uso. */
+    private void onLogoutFinished() {
+        setLoading(false);
+        app.showLogin();
+    }
+
+    private void setLoading(boolean loading) {
+        this.loading = loading;
+        logoutButton.setDisable(loading);
+        profileButton.setDisable(loading);
+        statusLabel.setText(loading ? "Saindo..." : "");
     }
 }

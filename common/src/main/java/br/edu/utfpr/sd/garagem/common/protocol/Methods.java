@@ -16,6 +16,18 @@ public final class Methods {
     /** Cadastra um novo usuário. */
     public static final String REGISTER = "register";
 
+    /** Consulta os dados do próprio usuário autenticado. */
+    public static final String GET_USER = "getuser";
+
+    /** Atualiza o nome ({@code name}) do usuário autenticado. */
+    public static final String UPDATE_USER_NAME = "updateusername";
+
+    /** Atualiza a senha do usuário autenticado. */
+    public static final String UPDATE_USER_PASSWORD = "updateuserpassword";
+
+    /** Exclui o cadastro do usuário autenticado. */
+    public static final String DELETE_USER = "deleteuser";
+
     // TODO EP-2: adicionar aqui os demais methods do protocolo (CRUD de
     // vagas/operacoes, CRUD admin) assim que forem definidos por Nathan e
     // Rafael na planilha de protocolo.

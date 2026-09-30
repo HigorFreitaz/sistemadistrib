@@ -33,6 +33,12 @@ class FxmlSmokeTest {
         assertNotNull(root);
     }
 
+    @Test
+    void profileViewCarregaSemErro() throws Exception {
+        Parent root = loadOnFxThread("/fxml/profile-view.fxml");
+        assertNotNull(root);
+    }
+
     private Parent loadOnFxThread(String resource) throws Exception {
         startToolkitIfNeeded();
         AtomicReference<Parent> result = new AtomicReference<>();
