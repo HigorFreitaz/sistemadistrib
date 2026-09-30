@@ -179,13 +179,21 @@ public final class ProfileController {
         task.setOnSucceeded(event -> onUserDataLoaded(task.getValue()));
         task.setOnFailed(event -> {
             setLoading(false);
-            showErrorNotification(friendlyMessage(task.getException(), "Nao foi possivel carregar os dados do perfil."));
+            if (task.getException() instanceof ConnectionException) {
+                app.showLogin();
+            } else {
+                showErrorNotification(friendlyMessage(task.getException(), "Nao foi possivel carregar os dados do perfil."));
+            }
         });
         TaskRunner.runInBackground(task, "profile-load-task");
     }
 
     private void onUserDataLoaded(Response response) {
         setLoading(false);
+        if (response.getStatusCode() == StatusCode.UNAUTHORIZED) {
+            app.showLogin();
+            return;
+        }
         if (response.getStatusCode() != StatusCode.OK) {
             showErrorNotification(response.getMessage());
             return;
@@ -215,6 +223,10 @@ public final class ProfileController {
         task.setOnSucceeded(event -> {
             setLoading(false);
             Response response = task.getValue();
+            if (response.getStatusCode() == StatusCode.UNAUTHORIZED) {
+                app.showLogin();
+                return;
+            }
             nameStatusLabel.setText(response.getMessage());
             if (response.getStatusCode() != StatusCode.OK) {
                 showErrorNotification(response.getMessage());
@@ -222,9 +234,13 @@ public final class ProfileController {
         });
         task.setOnFailed(event -> {
             setLoading(false);
-            String message = friendlyMessage(task.getException(), "Erro inesperado ao atualizar o nome.");
-            nameStatusLabel.setText(message);
-            LOGGER.log(Level.WARNING, "falha ao atualizar nome", task.getException());
+            if (task.getException() instanceof ConnectionException) {
+                app.showLogin();
+            } else {
+                String message = friendlyMessage(task.getException(), "Erro inesperado ao atualizar o nome.");
+                nameStatusLabel.setText(message);
+                LOGGER.log(Level.WARNING, "falha ao atualizar nome", task.getException());
+            }
         });
         TaskRunner.runInBackground(task, "profile-update-name-task");
     }
@@ -246,6 +262,11 @@ public final class ProfileController {
         task.setOnSucceeded(event -> {
             setLoading(false);
             Response response = task.getValue();
+            if (response.getStatusCode() == StatusCode.UNAUTHORIZED
+                    && response.getMessage() != null && response.getMessage().contains("sessao")) {
+                app.showLogin();
+                return;
+            }
             passwordStatusLabel.setText(response.getMessage());
             if (response.getStatusCode() == StatusCode.OK) {
                 oldPasswordField.clear();
@@ -257,9 +278,13 @@ public final class ProfileController {
         });
         task.setOnFailed(event -> {
             setLoading(false);
-            String message = friendlyMessage(task.getException(), "Erro inesperado ao trocar a senha.");
-            passwordStatusLabel.setText(message);
-            LOGGER.log(Level.WARNING, "falha ao trocar senha", task.getException());
+            if (task.getException() instanceof ConnectionException) {
+                app.showLogin();
+            } else {
+                String message = friendlyMessage(task.getException(), "Erro inesperado ao trocar a senha.");
+                passwordStatusLabel.setText(message);
+                LOGGER.log(Level.WARNING, "falha ao trocar senha", task.getException());
+            }
         });
         TaskRunner.runInBackground(task, "profile-change-password-task");
     }

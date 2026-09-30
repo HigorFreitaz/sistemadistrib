@@ -22,7 +22,7 @@
                 <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark" wrapText="true"/>
             </VBox>
             <Button fx:id="profileButton" text="Meu perfil" onAction="#handleOpenProfile" styleClass="button-secondary-on-dark"
-                    minWidth="90"/>
+                    prefWidth="100"/>
             <Button fx:id="logoutButton" text="Sair" onAction="#handleLogout" styleClass="button-secondary-on-dark"
                     minWidth="70"/>
         </HBox>
