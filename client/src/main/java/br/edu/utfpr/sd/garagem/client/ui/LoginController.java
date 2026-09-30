@@ -100,17 +100,17 @@ public final class LoginController {
                 }
             }
         };
-        task.setOnSucceeded(event -> onLoginSucceeded(task.getValue(), username));
+        task.setOnSucceeded(event -> onLoginSucceeded(task.getValue(), host, port, username));
         task.setOnFailed(event -> onLoginFailed(task.getException()));
         TaskRunner.runInBackground(task, "login-task");
     }
 
-    private void onLoginSucceeded(Response response, String username) {
+    private void onLoginSucceeded(Response response, String host, int port, String username) {
         setLoading(false);
         if (response.getStatusCode() == StatusCode.OK) {
             try {
                 TokenData tokenData = JsonSupport.GSON.fromJson(response.getData(), TokenData.class);
-                app.showMain(username, tokenData.getToken());
+                app.showMain(host, port, username, tokenData.getToken());
             } catch (JsonSyntaxException e) {
                 // servidor de outra implementacao respondendo num formato de
                 // "data" diferente do nosso (ex.: testando contra o servidor

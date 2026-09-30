@@ -7,14 +7,20 @@ package br.edu.utfpr.sd.garagem.common.model;
  */
 public final class User {
 
+    private String name;
     private String username;
     private String passwordHash;
     private UserRole role;
 
-    public User(String username, String passwordHash, UserRole role) {
+    public User(String name, String username, String passwordHash, UserRole role) {
+        this.name = name;
         this.username = username;
         this.passwordHash = passwordHash;
         this.role = role;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getUsername() {

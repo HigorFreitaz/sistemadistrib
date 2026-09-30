@@ -19,6 +19,13 @@ public final class StatusCode {
     /** Credenciais inválidas ou token inválido/expirado. */
     public static final int UNAUTHORIZED = 401;
 
+    /**
+     * Autenticado, mas sem permissão sobre o recurso pedido (ex.: token de
+     * um usuário usado para operar sobre o cadastro de outro username).
+     * Distinto de {@link #UNAUTHORIZED}, que é para token ausente/inválido.
+     */
+    public static final int FORBIDDEN = 403;
+
     /** Recurso ou operação não encontrada. */
     public static final int NOT_FOUND = 404;
 

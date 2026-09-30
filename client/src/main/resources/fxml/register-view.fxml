@@ -43,22 +43,28 @@
                         <ColumnConstraints minWidth="110"/>
                         <ColumnConstraints hgrow="ALWAYS"/>
                     </columnConstraints>
-                    <Label text="Usuario" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                    <TextField fx:id="usernameField" maxWidth="Infinity" promptText="Usuario" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                    <Label fx:id="usernameLengthHint" wrapText="true" styleClass="hint-invalid"
+                    <Label text="Nome" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                    <TextField fx:id="nameField" maxWidth="Infinity" promptText="Nome completo" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                    <Label fx:id="nameLengthHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                    <Label fx:id="usernameCharsetHint" wrapText="true" styleClass="hint-invalid"
+                    <Label fx:id="nameCharsetHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                    <Label text="Senha" styleClass="field-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                    <PasswordField fx:id="passwordField" maxWidth="Infinity" promptText="Senha" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-                    <Label fx:id="passwordLengthHint" wrapText="true" styleClass="hint-invalid"
+                    <Label text="Usuario" styleClass="field-label" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                    <TextField fx:id="usernameField" maxWidth="Infinity" promptText="Usuario" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    <Label fx:id="usernameLengthHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-                    <Label fx:id="passwordCharsetHint" wrapText="true" styleClass="hint-invalid"
+                    <Label fx:id="usernameCharsetHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-                    <Label text="Confirmar senha" styleClass="field-label" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                    <PasswordField fx:id="confirmPasswordField" maxWidth="Infinity" promptText="Senha" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
-                    <Label fx:id="confirmPasswordHint" wrapText="true" styleClass="hint-invalid"
+                    <Label text="Senha" styleClass="field-label" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="passwordField" maxWidth="Infinity" promptText="Senha" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordLengthHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordCharsetHint" wrapText="true" styleClass="hint-invalid"
+                           GridPane.rowIndex="8" GridPane.columnIndex="1"/>
+                    <Label text="Confirmar senha" styleClass="field-label" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="confirmPasswordField" maxWidth="Infinity" promptText="Senha" GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+                    <Label fx:id="confirmPasswordHint" wrapText="true" styleClass="hint-invalid"
+                           GridPane.rowIndex="10" GridPane.columnIndex="1"/>
                 </GridPane>
                 <VBox spacing="8">
                     <HBox alignment="CENTER">

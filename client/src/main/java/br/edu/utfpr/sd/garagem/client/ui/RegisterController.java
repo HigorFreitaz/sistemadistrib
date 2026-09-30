@@ -5,6 +5,7 @@ import br.edu.utfpr.sd.garagem.client.net.SocketConnector;
 import br.edu.utfpr.sd.garagem.common.protocol.RegisterRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
+import br.edu.utfpr.sd.garagem.common.validation.NameValidator;
 import br.edu.utfpr.sd.garagem.common.validation.PasswordValidator;
 import br.edu.utfpr.sd.garagem.common.validation.UsernameValidator;
 import javafx.concurrent.Task;
@@ -31,12 +32,20 @@ import java.util.logging.Logger;
 public final class RegisterController {
 
     private static final Logger LOGGER = Logger.getLogger(RegisterController.class.getName());
+    private static final String NAME_LENGTH_HINT = "Entre 1 e 60 caracteres";
+    private static final String NAME_CHARSET_HINT = "Somente letras e espacos";
     private static final String USERNAME_LENGTH_HINT = "Entre 3 e 20 caracteres";
     private static final String USERNAME_CHARSET_HINT = "Somente letras minusculas, numeros, '.' ou '_'";
     private static final String PASSWORD_LENGTH_HINT = "Entre 8 e 20 caracteres";
     private static final String PASSWORD_CHARSET_HINT = "Somente letras, numeros e os simbolos # . * & % $ @ ! ( ) - _ = +";
     private static final String CONFIRM_HINT = "As senhas coincidem";
 
+    @FXML
+    private TextField nameField;
+    @FXML
+    private Label nameLengthHint;
+    @FXML
+    private Label nameCharsetHint;
     @FXML
     private TextField usernameField;
     @FXML
@@ -74,16 +83,18 @@ public final class RegisterController {
 
     @FXML
     private void initialize() {
-        for (Label hint : new Label[] {usernameLengthHint, usernameCharsetHint, passwordLengthHint,
-                passwordCharsetHint, confirmPasswordHint}) {
+        for (Label hint : new Label[] {nameLengthHint, nameCharsetHint, usernameLengthHint, usernameCharsetHint,
+                passwordLengthHint, passwordCharsetHint, confirmPasswordHint}) {
             attachHintDot(hint);
         }
+        nameField.textProperty().addListener((obs, old, value) -> validateName());
         usernameField.textProperty().addListener((obs, old, value) -> validateUsername());
         passwordField.textProperty().addListener((obs, old, value) -> {
             validatePassword();
             validateConfirmPassword();
         });
         confirmPasswordField.textProperty().addListener((obs, old, value) -> validateConfirmPassword());
+        validateName();
         validateUsername();
         validatePassword();
         validateConfirmPassword();
@@ -100,6 +111,13 @@ public final class RegisterController {
         dot.getStyleClass().add("hint-dot");
         hint.setGraphic(dot);
         hint.setGraphicTextGap(6);
+    }
+
+    private void validateName() {
+        String name = nameField.getText();
+        setHint(nameLengthHint, NAME_LENGTH_HINT, NameValidator.hasValidLength(name));
+        setHint(nameCharsetHint, NAME_CHARSET_HINT, NameValidator.hasOnlyAllowedCharacters(name));
+        updateRegisterButtonState();
     }
 
     private void validateUsername() {
@@ -131,7 +149,8 @@ public final class RegisterController {
     }
 
     private void updateRegisterButtonState() {
-        boolean valid = UsernameValidator.isValid(usernameField.getText())
+        boolean valid = NameValidator.isValid(nameField.getText())
+                && UsernameValidator.isValid(usernameField.getText())
                 && PasswordValidator.isValid(passwordField.getText())
                 && confirmPasswordField.getText().equals(passwordField.getText());
         registerButton.setDisable(!valid || loading);
@@ -139,6 +158,7 @@ public final class RegisterController {
 
     @FXML
     private void handleRegister() {
+        String name = nameField.getText().trim();
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
@@ -148,7 +168,7 @@ public final class RegisterController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new RegisterRequest(username, password));
+                    return connector.send(new RegisterRequest(name, username, password));
                 }
             }
         };
@@ -184,6 +204,7 @@ public final class RegisterController {
         this.loading = loading;
         progressIndicator.setVisible(loading);
         progressIndicator.setManaged(loading);
+        nameField.setDisable(loading);
         usernameField.setDisable(loading);
         passwordField.setDisable(loading);
         confirmPasswordField.setDisable(loading);

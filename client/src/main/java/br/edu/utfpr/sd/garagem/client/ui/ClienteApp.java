@@ -69,15 +69,28 @@ public final class ClienteApp extends Application {
     }
 
     /** Exibe a tela principal pós-login, com a sessão já aberta. */
-    void showMain(String username, String token) {
+    void showMain(String host, int port, String username, String token) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main-view.fxml"));
             Parent root = loader.load();
             MainController controller = loader.getController();
-            controller.init(this, username, token);
+            controller.init(this, host, port, username, token);
             setScene(root);
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a tela principal", e);
+        }
+    }
+
+    /** Exibe a tela de perfil, reaproveitando host/porta e a sessão já aberta. */
+    void showProfile(String host, int port, String username, String token) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/profile-view.fxml"));
+            Parent root = loader.load();
+            ProfileController controller = loader.getController();
+            controller.init(this, host, port, username, token);
+            setScene(root);
+        } catch (IOException e) {
+            throw new IllegalStateException("nao foi possivel carregar a tela de perfil", e);
         }
     }
 

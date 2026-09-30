@@ -48,7 +48,7 @@ public final class JsonUserRepository implements UserRepository {
     }
 
     private void seedAdmin() throws IOException {
-        User admin = new User("admin", PasswordHasher.hash(DEFAULT_ADMIN_PASSWORD), UserRole.ADMIN);
+        User admin = new User("Administrador", "admin", PasswordHasher.hash(DEFAULT_ADMIN_PASSWORD), UserRole.ADMIN);
         usersByUsername.put(admin.getUsername(), admin);
         persist();
         LOGGER.warning(() -> "Base de usuarios criada com o usuario administrador padrao 'admin' / senha '"
@@ -82,6 +82,56 @@ public final class JsonUserRepository implements UserRepository {
         } catch (IOException e) {
             usersByUsername.remove(user.getUsername());
             throw new IllegalStateException("nao foi possivel salvar o usuario " + user.getUsername(), e);
+        }
+    }
+
+    /**
+     * Substituição e persistência precisam ser atômicas entre si (mesmo
+     * motivo de {@link #save}), para não perder uma escrita concorrente.
+     */
+    @Override
+    public synchronized boolean updateName(String username, String name) {
+        User existing = usersByUsername.get(username);
+        if (existing == null) {
+            return false;
+        }
+        User updated = new User(name, existing.getUsername(), existing.getPasswordHash(), existing.getRole());
+        return replace(existing, updated);
+    }
+
+    @Override
+    public synchronized boolean updatePasswordHash(String username, String passwordHash) {
+        User existing = usersByUsername.get(username);
+        if (existing == null) {
+            return false;
+        }
+        User updated = new User(existing.getName(), existing.getUsername(), passwordHash, existing.getRole());
+        return replace(existing, updated);
+    }
+
+    private boolean replace(User existing, User updated) {
+        usersByUsername.put(updated.getUsername(), updated);
+        try {
+            persist();
+            return true;
+        } catch (IOException e) {
+            usersByUsername.put(existing.getUsername(), existing);
+            throw new IllegalStateException("nao foi possivel atualizar o usuario " + existing.getUsername(), e);
+        }
+    }
+
+    @Override
+    public synchronized boolean deleteByUsername(String username) {
+        User removed = usersByUsername.remove(username);
+        if (removed == null) {
+            return false;
+        }
+        try {
+            persist();
+            return true;
+        } catch (IOException e) {
+            usersByUsername.put(username, removed);
+            throw new IllegalStateException("nao foi possivel remover o usuario " + username, e);
         }
     }
 }

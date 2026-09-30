@@ -128,7 +128,8 @@ class EndToEndSmokeTest {
 
     private void doRegister(String username, String password, int expectedStatus) throws IOException {
         try (TestClient client = new TestClient(port)) {
-            client.send("{\"method\":\"register\",\"data\":{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}}",
+            client.send("{\"method\":\"register\",\"data\":{\"name\":\"Fulano da Silva\",\"username\":\"" + username
+                            + "\",\"password\":\"" + password + "\"}}",
                     expectedStatus);
         }
     }

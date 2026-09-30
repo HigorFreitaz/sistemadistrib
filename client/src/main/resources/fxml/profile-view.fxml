@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="br.edu.utfpr.sd.garagem.client.ui.ProfileController">
+    <top>
+        <HBox styleClass="header-bar" alignment="CENTER_LEFT" spacing="14">
+            <StackPane styleClass="logo-badge">
+                <Label text="P" styleClass="logo-badge-text"/>
+            </StackPane>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="SD Garagem" styleClass="app-title-on-dark"/>
+                <Label text="Meu perfil" styleClass="app-subtitle-on-dark"/>
+            </VBox>
+            <Button fx:id="backButton" text="Voltar" onAction="#handleBack" styleClass="button-secondary-on-dark"
+                    minWidth="70"/>
+        </HBox>
+    </top>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="root">
+            <StackPane>
+                <padding>
+                    <Insets top="24" right="24" bottom="24" left="24"/>
+                </padding>
+                <VBox styleClass="card" maxWidth="440" maxHeight="-Infinity" spacing="18">
+                    <padding>
+                        <Insets top="26" right="30" bottom="26" left="30"/>
+                    </padding>
+
+                    <Label text="Dados da conta" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="4">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="110"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Usuario" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <Label fx:id="usernameLabel" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Nome" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="nameField" maxWidth="Infinity" promptText="Nome completo"
+                                   GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Label fx:id="nameLengthHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label fx:id="nameCharsetHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Button fx:id="saveNameButton" text="Salvar nome" onAction="#handleSaveName"
+                                disable="true" styleClass="button-primary"/>
+                        <Label fx:id="nameStatusLabel" wrapText="true" styleClass="status-label"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <Label text="Trocar senha" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="4">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="110"/>
+                            <ColumnConstraints hgrow="ALWAYS"/>
+                        </columnConstraints>
+                        <Label text="Senha atual" styleClass="field-label" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <PasswordField fx:id="oldPasswordField" maxWidth="Infinity" promptText="Senha atual"
+                                       GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Nova senha" styleClass="field-label" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <PasswordField fx:id="newPasswordField" maxWidth="Infinity" promptText="Nova senha"
+                                       GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Label fx:id="newPasswordLengthHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Label fx:id="newPasswordCharsetHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <Label text="Confirmar nova senha" styleClass="field-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <PasswordField fx:id="confirmNewPasswordField" maxWidth="Infinity" promptText="Nova senha"
+                                       GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        <Label fx:id="confirmNewPasswordHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                    </GridPane>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Button fx:id="changePasswordButton" text="Trocar senha" onAction="#handleChangePassword"
+                                disable="true" styleClass="button-primary"/>
+                        <Label fx:id="passwordStatusLabel" wrapText="true" styleClass="status-label"/>
+                    </HBox>
+
+                    <Separator/>
+
+                    <Label text="Zona de risco" styleClass="card-title"/>
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Button fx:id="deleteAccountButton" text="Excluir conta" onAction="#handleDeleteAccount"
+                                styleClass="button-danger"/>
+                    </HBox>
+
+                    <HBox spacing="8" alignment="CENTER">
+                        <ProgressIndicator fx:id="progressIndicator" visible="false" managed="false" prefWidth="18" prefHeight="18"/>
+                        <Label fx:id="statusLabel" wrapText="true" textAlignment="CENTER" styleClass="status-label"/>
+                    </HBox>
+                </VBox>
+            </StackPane>
+        </ScrollPane>
+    </center>
+</BorderPane>

@@ -2,6 +2,7 @@ package br.edu.utfpr.sd.garagem.server.net;
 
 import br.edu.utfpr.sd.garagem.common.json.JsonSupport;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
+import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.transport.MessageIO;
 import br.edu.utfpr.sd.garagem.server.log.LogMasking;
 
@@ -42,11 +43,21 @@ public final class ClientHandler implements Runnable {
              PrintWriter out = MessageIO.newWriter(connection.getOutputStream())) {
             String line = reader.readLine();
             if (line != null) {
-                listener.onLog("<- " + LogMasking.maskPassword(line));
-                Response response = dispatcher.dispatch(line);
+                listener.onLog("[CLIENTE] " + LogMasking.maskPassword(line));
+                Response response;
+                try {
+                    response = dispatcher.dispatch(line);
+                } catch (RuntimeException e) {
+                    // Qualquer falha inesperada no processamento (ex.: erro de
+                    // I/O ao persistir estado em disco) nao pode simplesmente
+                    // fechar o socket sem resposta -- o cliente ficaria com
+                    // leitura null, indistinguivel de "servidor caiu".
+                    LOGGER.log(Level.SEVERE, "erro inesperado ao processar requisicao (" + remote + ")", e);
+                    response = Response.error(StatusCode.INTERNAL_ERROR, "Erro interno no servidor");
+                }
                 String json = JsonSupport.GSON.toJson(response);
                 out.println(json);
-                listener.onLog("-> " + json);
+                listener.onLog("[SERVIDOR] " + json);
             }
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "conexao encerrada com erro (" + remote + "): " + e.getMessage());
