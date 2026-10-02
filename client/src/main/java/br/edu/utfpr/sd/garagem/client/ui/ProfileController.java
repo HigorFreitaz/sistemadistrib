@@ -263,7 +263,7 @@ public final class ProfileController {
             setLoading(false);
             Response response = task.getValue();
             if (response.getStatusCode() == StatusCode.UNAUTHORIZED
-                    && response.getMessage() != null && response.getMessage().contains("sessao")) {
+                    && response.getMessage() != null && response.getMessage().contains("Sess")) {
                 app.showLogin();
                 return;
             }
