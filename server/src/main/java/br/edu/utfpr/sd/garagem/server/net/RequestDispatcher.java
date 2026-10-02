@@ -74,15 +74,12 @@ public final class RequestDispatcher {
     private Response handleLogin(JsonObject envelope) {
         LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
         if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
-            return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senha em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senhas inválidos");
         }
         LoginResult result = authService.login(request.getUsername(), request.getPassword());
-        // mensagens distintas por caso, conforme o fluxo documentado em
-        // docs/Requisitos Funcionais e nao funcionais.docx (ver LoginResult)
         return switch (result.getStatus()) {
             case SUCCESS -> onLoginSuccess(result.getSession());
-            case USER_NOT_FOUND -> Response.error(StatusCode.UNAUTHORIZED, "Usuario nao encontrado");
-            case WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Senha incorreta");
+            case USER_NOT_FOUND, WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Usuario ou senhas inválidos");
         };
     }
 
@@ -94,14 +91,11 @@ public final class RequestDispatcher {
     private Response handleLogout(JsonObject envelope) {
         LogoutRequest request = JsonSupport.GSON.fromJson(envelope, LogoutRequest.class);
         if (request.getToken() == null || request.getToken().isBlank()) {
-            return Response.error(StatusCode.BAD_REQUEST, "Token nao informado");
+            return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
         }
-        boolean removed = authService.logout(request.getToken());
-        if (removed) {
-            listener.onSessionCountChanged(authService.activeSessionCount());
-            return Response.ok("Usuário deslogado com sucesso", null);
-        }
-        return Response.error(StatusCode.UNAUTHORIZED, "Token invalido ou sessao inexistente");
+        authService.logout(request.getToken());
+        listener.onSessionCountChanged(authService.activeSessionCount());
+        return Response.ok("Usuário deslogado com sucesso", null);
     }
 
     private Response handleRegister(JsonObject envelope) {
@@ -113,7 +107,7 @@ public final class RequestDispatcher {
         boolean created = authService.register(request.getName(), request.getUsername(), request.getPassword());
         return created
                 ? Response.created("Usuário criado com sucesso", null)
-                : Response.error(StatusCode.CONFLICT, "Usuario ja cadastrado");
+                : Response.error(StatusCode.CONFLICT, "O username já está em uso.");
     }
 
     private Response handleGetUser(JsonObject envelope) {
@@ -124,7 +118,7 @@ public final class RequestDispatcher {
         }
         Optional<User> user = authService.getUserData(request.getUsername());
         if (user.isEmpty()) {
-            return Response.error(StatusCode.NOT_FOUND, "Usuario nao encontrado");
+            return Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
         }
         return Response.ok("Usuário encontrado com sucesso",
                 new UserData(user.get().getName(), user.get().getUsername()));
@@ -137,12 +131,12 @@ public final class RequestDispatcher {
             return semAcesso;
         }
         if (!NameValidator.isValid(request.getName())) {
-            return Response.error(StatusCode.BAD_REQUEST, "Nome em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "Nome do usuário fora do padrão");
         }
         boolean updated = authService.updateName(request.getUsername(), request.getName());
         return updated
-                ? Response.ok("Usuário atualizado com sucesso", null)
-                : Response.error(StatusCode.NOT_FOUND, "Usuario nao encontrado");
+                ? Response.ok("Nome do usuário atualizado com sucesso", null)
+                : Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
     }
 
     private Response handleUpdateUserPassword(JsonObject envelope) {
@@ -152,28 +146,34 @@ public final class RequestDispatcher {
             return semAcesso;
         }
         if (!PasswordValidator.isValid(request.getNewPassword())) {
-            return Response.error(StatusCode.BAD_REQUEST, "Nova senha em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "Senha fora do padrão");
         }
         UpdatePasswordResult result = authService.updatePassword(
                 request.getUsername(), request.getOldPassword(), request.getNewPassword());
         return switch (result.getStatus()) {
             case SUCCESS -> Response.ok("Senha atualizada com sucesso", null);
             case WRONG_OLD_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Senha atual incorreta");
-            case USER_NOT_FOUND -> Response.error(StatusCode.NOT_FOUND, "Usuario nao encontrado");
+            case USER_NOT_FOUND -> Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
         };
     }
 
     private Response handleDeleteUser(JsonObject envelope) {
         DeleteUserRequest request = JsonSupport.GSON.fromJson(envelope, DeleteUserRequest.class);
-        Response semAcesso = verificarAcesso(request.getToken(), request.getUsername());
-        if (semAcesso != null) {
-            return semAcesso;
+        if (request.getToken() == null || request.getToken().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
+        }
+        Optional<Session> session = authService.resolveSession(request.getToken());
+        if (session.isEmpty()) {
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        }
+        if (!session.get().getUsername().equals(request.getUsername())) {
+            return Response.error(StatusCode.UNAUTHORIZED, "Operação não autorizada");
         }
         boolean deleted = authService.deleteUser(request.getUsername(), request.getToken());
         listener.onSessionCountChanged(authService.activeSessionCount());
         return deleted
                 ? Response.ok("Usuário deletado com sucesso", null)
-                : Response.error(StatusCode.NOT_FOUND, "Usuario nao encontrado");
+                : Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
     }
 
     /**
@@ -186,27 +186,27 @@ public final class RequestDispatcher {
      */
     private Response verificarAcesso(String token, String username) {
         if (token == null || token.isBlank()) {
-            return Response.error(StatusCode.BAD_REQUEST, "Token nao informado");
+            return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
         }
         Optional<Session> session = authService.resolveSession(token);
         if (session.isEmpty()) {
-            return Response.error(StatusCode.UNAUTHORIZED, "Token invalido ou sessao expirada");
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
         if (!session.get().getUsername().equals(username)) {
-            return Response.error(StatusCode.FORBIDDEN, "Token nao pertence ao usuario informado");
+            return Response.error(StatusCode.FORBIDDEN, "Sessão expirada ou encerrada.");
         }
         return null;
     }
 
     private Response validarCadastro(String name, String username, String password) {
         if (!NameValidator.isValid(name)) {
-            return Response.error(StatusCode.BAD_REQUEST, "Nome em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "O campo name não está no padrão esperado.");
         }
         if (!UsernameValidator.isValid(username)) {
-            return Response.error(StatusCode.BAD_REQUEST, "Usuario em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "O campo username não está no padrão esperado.");
         }
         if (!PasswordValidator.isValid(password)) {
-            return Response.error(StatusCode.BAD_REQUEST, "Senha em formato invalido");
+            return Response.error(StatusCode.BAD_REQUEST, "O campo password não está no padrão esperado.");
         }
         return null;
     }
