@@ -74,12 +74,12 @@ public final class RequestDispatcher {
     private Response handleLogin(JsonObject envelope) {
         LoginRequest request = JsonSupport.GSON.fromJson(envelope, LoginRequest.class);
         if (!credenciaisValidas(request.getUsername(), request.getPassword())) {
-            return Response.error(StatusCode.BAD_REQUEST, "Usuario ou senhas inválidos");
+            return Response.error(StatusCode.BAD_REQUEST, "Usuario e/ou senhas inválidos");
         }
         LoginResult result = authService.login(request.getUsername(), request.getPassword());
         return switch (result.getStatus()) {
             case SUCCESS -> onLoginSuccess(result.getSession());
-            case USER_NOT_FOUND, WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Usuario ou senhas inválidos");
+            case USER_NOT_FOUND, WRONG_PASSWORD -> Response.error(StatusCode.UNAUTHORIZED, "Usuario e/ou senhas inválidos");
         };
     }
 
