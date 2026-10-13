@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -21,8 +22,10 @@
                 <Label text="SD Garagem" styleClass="app-title-on-dark"/>
                 <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark" wrapText="true"/>
             </VBox>
-            <Button fx:id="profileButton" text="Meu perfil" onAction="#handleOpenProfile" styleClass="button-secondary-on-dark"
-                    prefWidth="100"/>
+            <Button fx:id="profileButton" text="&#x1F464;" onAction="#handleOpenProfile" styleClass="button-secondary-on-dark"
+                    minWidth="40" prefWidth="40">
+                <tooltip><Tooltip text="Meu perfil"/></tooltip>
+            </Button>
             <Button fx:id="logoutButton" text="Sair" onAction="#handleLogout" styleClass="button-secondary-on-dark"
                     minWidth="70"/>
         </HBox>

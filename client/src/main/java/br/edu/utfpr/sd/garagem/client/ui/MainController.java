@@ -9,14 +9,18 @@ import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
 import br.edu.utfpr.sd.garagem.common.protocol.UserData;
 import com.google.gson.JsonSyntaxException;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.util.Duration;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,6 +48,8 @@ public final class MainController {
     private String username;
     private String token;
     private boolean loading;
+    private Timeline heartbeat;
+    private final AtomicBoolean heartbeatRunning = new AtomicBoolean(false);
 
     /** Preenche a tela com os dados da sessão aberta no login e busca o nome de exibição. */
     public void init(ClienteApp app, String host, int port, String username, String token) {
@@ -54,6 +60,62 @@ public final class MainController {
         this.token = token;
         usernameLabel.setText("Bem-vindo, " + username);
         loadDisplayName();
+        startHeartbeat();
+    }
+
+    private void startHeartbeat() {
+        heartbeat = new Timeline(new KeyFrame(Duration.seconds(8), event -> pingServer()));
+        heartbeat.setCycleCount(Timeline.INDEFINITE);
+        heartbeat.play();
+    }
+
+    private void stopHeartbeat() {
+        if (heartbeat != null) {
+            heartbeat.stop();
+        }
+    }
+
+    private void pingServer() {
+        if (!heartbeatRunning.compareAndSet(false, true)) {
+            return;
+        }
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new GetUserRequest(token, username));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            heartbeatRunning.set(false);
+            Response response = task.getValue();
+            if (response.getStatusCode() == StatusCode.UNAUTHORIZED) {
+                stopHeartbeat();
+                onSessionInvalidated();
+            }
+        });
+        task.setOnFailed(event -> {
+            heartbeatRunning.set(false);
+            if (task.getException() instanceof ConnectionException) {
+                stopHeartbeat();
+                onServerUnreachable();
+            }
+        });
+        TaskRunner.runInBackground(task, "main-heartbeat-task");
+    }
+
+    private void onServerUnreachable() {
+        Alert alert = new Alert(Alert.AlertType.WARNING,
+                "O servidor ficou inacessível. Você será redirecionado para o login.", ButtonType.OK);
+        alert.setHeaderText(null);
+        alert.showAndWait();
+        app.showLogin();
+    }
+
+    private void onSessionInvalidated() {
+        app.showLogin();
     }
 
     private void loadDisplayName() {
@@ -87,6 +149,7 @@ public final class MainController {
 
     @FXML
     private void handleOpenProfile() {
+        stopHeartbeat();
         app.showProfile(host, port, username, token);
     }
 
@@ -109,6 +172,7 @@ public final class MainController {
                 }
             }
         };
+        stopHeartbeat();
         task.setOnSucceeded(event -> onLogoutFinished());
         task.setOnFailed(event -> {
             LOGGER.log(Level.WARNING, "falha ao efetuar logout", task.getException());
