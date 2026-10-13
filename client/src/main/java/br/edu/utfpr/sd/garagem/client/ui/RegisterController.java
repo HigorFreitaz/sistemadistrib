@@ -38,6 +38,10 @@ public final class RegisterController {
     private static final String USERNAME_CHARSET_HINT = "Somente letras minusculas, numeros, '.' ou '_'";
     private static final String PASSWORD_LENGTH_HINT = "Entre 8 e 20 caracteres";
     private static final String PASSWORD_CHARSET_HINT = "Somente letras, numeros e os simbolos # . * & % $ @ ! ( ) - _ = +";
+    private static final String PASSWORD_UPPER_HINT = "Min 1 letra maiuscula";
+    private static final String PASSWORD_LOWER_HINT = "Min 1 letra minuscula";
+    private static final String PASSWORD_DIGIT_HINT = "Min 1 numero";
+    private static final String PASSWORD_SPECIAL_HINT = "Min 1 simbolo especial";
     private static final String CONFIRM_HINT = "As senhas coincidem";
 
     @FXML
@@ -60,6 +64,14 @@ public final class RegisterController {
     private Label passwordLengthHint;
     @FXML
     private Label passwordCharsetHint;
+    @FXML
+    private Label passwordUpperHint;
+    @FXML
+    private Label passwordLowerHint;
+    @FXML
+    private Label passwordDigitHint;
+    @FXML
+    private Label passwordSpecialHint;
     @FXML
     private Label confirmPasswordHint;
     @FXML
@@ -84,7 +96,8 @@ public final class RegisterController {
     @FXML
     private void initialize() {
         for (Label hint : new Label[] {nameLengthHint, nameCharsetHint, usernameLengthHint, usernameCharsetHint,
-                passwordLengthHint, passwordCharsetHint, confirmPasswordHint}) {
+                passwordLengthHint, passwordCharsetHint, passwordUpperHint, passwordLowerHint,
+                passwordDigitHint, passwordSpecialHint, confirmPasswordHint}) {
             attachHintDot(hint);
         }
         nameField.textProperty().addListener((obs, old, value) -> validateName());
@@ -131,6 +144,10 @@ public final class RegisterController {
         String password = passwordField.getText();
         setHint(passwordLengthHint, PASSWORD_LENGTH_HINT, PasswordValidator.hasValidLength(password));
         setHint(passwordCharsetHint, PASSWORD_CHARSET_HINT, PasswordValidator.hasOnlyAllowedCharacters(password));
+        setHint(passwordUpperHint, PASSWORD_UPPER_HINT, PasswordValidator.hasUpperCase(password));
+        setHint(passwordLowerHint, PASSWORD_LOWER_HINT, PasswordValidator.hasLowerCase(password));
+        setHint(passwordDigitHint, PASSWORD_DIGIT_HINT, PasswordValidator.hasDigit(password));
+        setHint(passwordSpecialHint, PASSWORD_SPECIAL_HINT, PasswordValidator.hasSpecialChar(password));
         updateRegisterButtonState();
     }
 

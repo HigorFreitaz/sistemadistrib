@@ -82,11 +82,19 @@
                                GridPane.rowIndex="2" GridPane.columnIndex="1"/>
                         <Label fx:id="newPasswordCharsetHint" wrapText="true" styleClass="hint-invalid"
                                GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-                        <Label text="Confirmar nova senha" styleClass="field-label" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                        <PasswordField fx:id="confirmNewPasswordField" maxWidth="Infinity" promptText="Nova senha"
-                                       GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-                        <Label fx:id="confirmNewPasswordHint" wrapText="true" styleClass="hint-invalid"
+                        <Label fx:id="newPasswordUpperHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        <Label fx:id="newPasswordLowerHint" wrapText="true" styleClass="hint-invalid"
                                GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                        <Label fx:id="newPasswordDigitHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                        <Label fx:id="newPasswordSpecialHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+                        <Label text="Confirmar nova senha" styleClass="field-label" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+                        <PasswordField fx:id="confirmNewPasswordField" maxWidth="Infinity" promptText="Nova senha"
+                                       GridPane.rowIndex="8" GridPane.columnIndex="1"/>
+                        <Label fx:id="confirmNewPasswordHint" wrapText="true" styleClass="hint-invalid"
+                               GridPane.rowIndex="9" GridPane.columnIndex="1"/>
                     </GridPane>
                     <HBox spacing="8" alignment="CENTER_LEFT">
                         <Button fx:id="changePasswordButton" text="Trocar senha" onAction="#handleChangePassword"

@@ -61,10 +61,18 @@
                            GridPane.rowIndex="7" GridPane.columnIndex="1"/>
                     <Label fx:id="passwordCharsetHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="8" GridPane.columnIndex="1"/>
-                    <Label text="Confirmar senha" styleClass="field-label" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
-                    <PasswordField fx:id="confirmPasswordField" maxWidth="Infinity" promptText="Senha" GridPane.rowIndex="9" GridPane.columnIndex="1"/>
-                    <Label fx:id="confirmPasswordHint" wrapText="true" styleClass="hint-invalid"
+                    <Label fx:id="passwordUpperHint" wrapText="true" styleClass="hint-invalid"
+                           GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordLowerHint" wrapText="true" styleClass="hint-invalid"
                            GridPane.rowIndex="10" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordDigitHint" wrapText="true" styleClass="hint-invalid"
+                           GridPane.rowIndex="11" GridPane.columnIndex="1"/>
+                    <Label fx:id="passwordSpecialHint" wrapText="true" styleClass="hint-invalid"
+                           GridPane.rowIndex="12" GridPane.columnIndex="1"/>
+                    <Label text="Confirmar senha" styleClass="field-label" GridPane.rowIndex="13" GridPane.columnIndex="0"/>
+                    <PasswordField fx:id="confirmPasswordField" maxWidth="Infinity" promptText="Senha" GridPane.rowIndex="13" GridPane.columnIndex="1"/>
+                    <Label fx:id="confirmPasswordHint" wrapText="true" styleClass="hint-invalid"
+                           GridPane.rowIndex="14" GridPane.columnIndex="1"/>
                 </GridPane>
                 <VBox spacing="8">
                     <HBox alignment="CENTER">
