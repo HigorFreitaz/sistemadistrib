@@ -139,6 +139,9 @@ public final class ServerController implements ServerEventListener {
 
     /** Encerra o servidor ao fechar a janela, para não deixar o socket aberto. */
     public void shutdown() {
+        if (authService != null) {
+            authService.logoutAllSessions();
+        }
         if (server != null) {
             server.stop();
         }
