@@ -3,12 +3,13 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -22,8 +23,12 @@
                 <Label text="SD Garagem" styleClass="app-title-on-dark"/>
                 <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark" wrapText="true"/>
             </VBox>
-            <Button fx:id="profileButton" text="&#x1F464;" onAction="#handleOpenProfile" styleClass="button-secondary-on-dark"
-                    minWidth="40" prefWidth="40">
+            <Button fx:id="profileButton" onAction="#handleOpenProfile" styleClass="button-secondary-on-dark"
+                    minWidth="40" prefWidth="40" contentDisplay="GRAPHIC_ONLY">
+                <graphic>
+                    <SVGPath fill="white"
+                             content="M8 8c2.21 0 4-1.79 4-4S10.21 0 8 0 4 1.79 4 4s1.79 4 4 4zm0 2C5.33 10 0 11.34 0 14v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </graphic>
                 <tooltip><Tooltip text="Meu perfil"/></tooltip>
             </Button>
             <Button fx:id="logoutButton" text="Sair" onAction="#handleLogout" styleClass="button-secondary-on-dark"

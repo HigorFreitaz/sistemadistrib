@@ -64,7 +64,7 @@ public final class MainController {
     }
 
     private void startHeartbeat() {
-        heartbeat = new Timeline(new KeyFrame(Duration.seconds(8), event -> pingServer()));
+        heartbeat = new Timeline(new KeyFrame(Duration.seconds(4), event -> pingServer()));
         heartbeat.setCycleCount(Timeline.INDEFINITE);
         heartbeat.play();
     }
