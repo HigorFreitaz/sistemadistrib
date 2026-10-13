@@ -43,6 +43,10 @@ public final class ProfileController {
     private static final String NAME_CHARSET_HINT = "Somente letras e espacos";
     private static final String PASSWORD_LENGTH_HINT = "Entre 8 e 20 caracteres";
     private static final String PASSWORD_CHARSET_HINT = "Somente letras, numeros e os simbolos # . * & % $ @ ! ( ) - _ = +";
+    private static final String PASSWORD_UPPER_HINT = "Min 1 letra maiuscula";
+    private static final String PASSWORD_LOWER_HINT = "Min 1 letra minuscula";
+    private static final String PASSWORD_DIGIT_HINT = "Min 1 numero";
+    private static final String PASSWORD_SPECIAL_HINT = "Min 1 simbolo especial";
     private static final String CONFIRM_HINT = "As senhas coincidem";
 
     @FXML
@@ -68,6 +72,14 @@ public final class ProfileController {
     private Label newPasswordLengthHint;
     @FXML
     private Label newPasswordCharsetHint;
+    @FXML
+    private Label newPasswordUpperHint;
+    @FXML
+    private Label newPasswordLowerHint;
+    @FXML
+    private Label newPasswordDigitHint;
+    @FXML
+    private Label newPasswordSpecialHint;
     @FXML
     private Label confirmNewPasswordHint;
     @FXML
@@ -105,7 +117,8 @@ public final class ProfileController {
     @FXML
     private void initialize() {
         for (Label hint : new Label[] {nameLengthHint, nameCharsetHint, newPasswordLengthHint,
-                newPasswordCharsetHint, confirmNewPasswordHint}) {
+                newPasswordCharsetHint, newPasswordUpperHint, newPasswordLowerHint,
+                newPasswordDigitHint, newPasswordSpecialHint, confirmNewPasswordHint}) {
             attachHintDot(hint);
         }
         nameField.textProperty().addListener((obs, old, value) -> validateName());
@@ -144,6 +157,10 @@ public final class ProfileController {
         String password = newPasswordField.getText();
         setHint(newPasswordLengthHint, PASSWORD_LENGTH_HINT, PasswordValidator.hasValidLength(password));
         setHint(newPasswordCharsetHint, PASSWORD_CHARSET_HINT, PasswordValidator.hasOnlyAllowedCharacters(password));
+        setHint(newPasswordUpperHint, PASSWORD_UPPER_HINT, PasswordValidator.hasUpperCase(password));
+        setHint(newPasswordLowerHint, PASSWORD_LOWER_HINT, PasswordValidator.hasLowerCase(password));
+        setHint(newPasswordDigitHint, PASSWORD_DIGIT_HINT, PasswordValidator.hasDigit(password));
+        setHint(newPasswordSpecialHint, PASSWORD_SPECIAL_HINT, PasswordValidator.hasSpecialChar(password));
         updateChangePasswordButtonState();
     }
 
