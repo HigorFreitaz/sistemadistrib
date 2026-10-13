@@ -141,6 +141,7 @@ public final class ServerController implements ServerEventListener {
     public void shutdown() {
         if (authService != null) {
             authService.logoutAllSessions();
+            onSessionCountChanged(0);
         }
         if (server != null) {
             server.stop();
