@@ -21,6 +21,7 @@ public final class JsonSupport {
     public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
             .disableHtmlEscaping()
+            .serializeNulls()
             .create();
 
     private JsonSupport() {
