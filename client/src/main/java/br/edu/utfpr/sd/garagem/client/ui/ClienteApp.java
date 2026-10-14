@@ -41,6 +41,11 @@ public final class ClienteApp extends Application {
 
     /** Exibe a tela de login, com o username já preenchido (ex.: após cadastro). */
     void showLogin(String prefillUsername) {
+        showLogin(prefillUsername, null, 0);
+    }
+
+    /** Exibe a tela de login, preservando o host/porta usados na tela anterior. */
+    void showLogin(String prefillUsername, String host, int port) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login-view.fxml"));
             Parent root = loader.load();
@@ -48,6 +53,9 @@ public final class ClienteApp extends Application {
             controller.init(this);
             if (prefillUsername != null) {
                 controller.setUsername(prefillUsername);
+            }
+            if (host != null) {
+                controller.setHost(host, port);
             }
             setScene(root);
         } catch (IOException e) {

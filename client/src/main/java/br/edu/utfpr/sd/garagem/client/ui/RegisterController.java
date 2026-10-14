@@ -197,7 +197,7 @@ public final class RegisterController {
     private void onRegisterSucceeded(Response response, String username) {
         setLoading(false);
         if (response.getStatusCode() == StatusCode.CREATED) {
-            app.showLogin(username);
+            app.showLogin(username, host, port);
         } else {
             statusLabel.setText(response.getMessage());
         }
@@ -214,7 +214,7 @@ public final class RegisterController {
 
     @FXML
     private void handleBackToLogin() {
-        app.showLogin();
+        app.showLogin(null, host, port);
     }
 
     private void setLoading(boolean loading) {

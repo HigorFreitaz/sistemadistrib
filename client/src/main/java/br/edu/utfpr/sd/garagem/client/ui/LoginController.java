@@ -65,6 +65,12 @@ public final class LoginController {
         usernameField.setText(username);
     }
 
+    /** Preenche host e porta (ex.: ao voltar do cadastro). */
+    public void setHost(String host, int port) {
+        hostField.setText(host);
+        portField.setText(String.valueOf(port));
+    }
+
     @FXML
     private void initialize() {
         hostField.setText("localhost");
