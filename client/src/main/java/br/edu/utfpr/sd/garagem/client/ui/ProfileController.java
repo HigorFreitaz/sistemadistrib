@@ -47,6 +47,7 @@ public final class ProfileController {
     private static final String PASSWORD_LOWER_HINT = "Min 1 letra minuscula";
     private static final String PASSWORD_DIGIT_HINT = "Min 1 numero";
     private static final String PASSWORD_SPECIAL_HINT = "Min 1 simbolo especial";
+    private static final String PASSWORD_DIFFERENT_HINT = "Nova senha diferente da atual";
     private static final String CONFIRM_HINT = "As senhas coincidem";
 
     @FXML
@@ -68,6 +69,8 @@ public final class ProfileController {
     private PasswordField newPasswordField;
     @FXML
     private PasswordField confirmNewPasswordField;
+    @FXML
+    private Label newPasswordDifferentHint;
     @FXML
     private Label newPasswordLengthHint;
     @FXML
@@ -116,8 +119,8 @@ public final class ProfileController {
 
     @FXML
     private void initialize() {
-        for (Label hint : new Label[] {nameLengthHint, nameCharsetHint, newPasswordLengthHint,
-                newPasswordCharsetHint, newPasswordUpperHint, newPasswordLowerHint,
+        for (Label hint : new Label[] {nameLengthHint, nameCharsetHint, newPasswordDifferentHint,
+                newPasswordLengthHint, newPasswordCharsetHint, newPasswordUpperHint, newPasswordLowerHint,
                 newPasswordDigitHint, newPasswordSpecialHint, confirmNewPasswordHint}) {
             attachHintDot(hint);
         }
@@ -127,7 +130,10 @@ public final class ProfileController {
             validateConfirmNewPassword();
         });
         confirmNewPasswordField.textProperty().addListener((obs, old, value) -> validateConfirmNewPassword());
-        oldPasswordField.textProperty().addListener((obs, old, value) -> updateChangePasswordButtonState());
+        oldPasswordField.textProperty().addListener((obs, old, value) -> {
+            validateNewPassword();
+            updateChangePasswordButtonState();
+        });
         validateName();
         validateNewPassword();
         validateConfirmNewPassword();
@@ -155,6 +161,9 @@ public final class ProfileController {
 
     private void validateNewPassword() {
         String password = newPasswordField.getText();
+        String oldPassword = oldPasswordField.getText();
+        boolean different = !password.isEmpty() && !password.equals(oldPassword);
+        setHint(newPasswordDifferentHint, PASSWORD_DIFFERENT_HINT, different);
         setHint(newPasswordLengthHint, PASSWORD_LENGTH_HINT, PasswordValidator.hasValidLength(password));
         setHint(newPasswordCharsetHint, PASSWORD_CHARSET_HINT, PasswordValidator.hasOnlyAllowedCharacters(password));
         setHint(newPasswordUpperHint, PASSWORD_UPPER_HINT, PasswordValidator.hasUpperCase(password));
@@ -176,9 +185,12 @@ public final class ProfileController {
     }
 
     private void updateChangePasswordButtonState() {
-        boolean valid = !oldPasswordField.getText().isEmpty()
-                && PasswordValidator.isValid(newPasswordField.getText())
-                && confirmNewPasswordField.getText().equals(newPasswordField.getText());
+        String oldPwd = oldPasswordField.getText();
+        String newPwd = newPasswordField.getText();
+        boolean valid = !oldPwd.isEmpty()
+                && !newPwd.equals(oldPwd)
+                && PasswordValidator.isValid(newPwd)
+                && confirmNewPasswordField.getText().equals(newPwd);
         changePasswordButton.setDisable(!valid || loading);
     }
 

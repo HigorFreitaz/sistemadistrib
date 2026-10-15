@@ -29,6 +29,7 @@
         </HBox>
     </top>
     <center>
+        <ScrollPane fitToWidth="true" styleClass="root">
         <StackPane>
             <padding>
                 <Insets top="24" right="24" bottom="24" left="24"/>
@@ -87,5 +88,6 @@
                 </VBox>
             </VBox>
         </StackPane>
+        </ScrollPane>
     </center>
 </BorderPane>
