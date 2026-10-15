@@ -1,6 +1,7 @@
 package br.edu.utfpr.sd.garagem.client.net;
 
 import br.edu.utfpr.sd.garagem.common.json.JsonSupport;
+import br.edu.utfpr.sd.garagem.common.log.LogMasking;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.transport.MessageIO;
 import com.google.gson.JsonSyntaxException;
@@ -68,7 +69,7 @@ public final class SocketConnector implements AutoCloseable {
     public Response send(Object request) throws ConnectionException {
         try {
             String requestJson = JsonSupport.GSON.toJson(request);
-            LOGGER.info("[CLIENTE] " + requestJson);
+            LOGGER.info("[CLIENTE] " + LogMasking.maskPassword(requestJson));
             writer.println(requestJson);
             if (writer.checkError()) {
                 throw new IOException("falha ao enviar dados para o servidor");

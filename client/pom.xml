@@ -60,6 +60,9 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>${javafx.mainClass}</mainClass>
+                    <jvmArgs>
+                        <jvmArg>-Djava.util.logging.config.file=${project.build.outputDirectory}/logging.properties</jvmArg>
+                    </jvmArgs>
                 </configuration>
             </plugin>
         </plugins>
