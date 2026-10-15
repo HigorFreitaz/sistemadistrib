@@ -67,7 +67,9 @@ public final class SocketConnector implements AutoCloseable {
     /** Envia uma requisição e aguarda a resposta correspondente, em uma linha JSON. */
     public Response send(Object request) throws ConnectionException {
         try {
-            writer.println(JsonSupport.GSON.toJson(request));
+            String requestJson = JsonSupport.GSON.toJson(request);
+            LOGGER.info("[CLIENTE] " + requestJson);
+            writer.println(requestJson);
             if (writer.checkError()) {
                 throw new IOException("falha ao enviar dados para o servidor");
             }
@@ -75,6 +77,7 @@ public final class SocketConnector implements AutoCloseable {
             if (line == null) {
                 throw new IOException("conexão encerrada pelo servidor");
             }
+            LOGGER.info("[SERVIDOR] " + line);
             return JsonSupport.GSON.fromJson(line, Response.class);
         } catch (SocketTimeoutException e) {
             throw new ConnectionException("O servidor demorou demais para responder.", e);
