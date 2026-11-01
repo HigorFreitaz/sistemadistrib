@@ -8,6 +8,7 @@ import br.edu.utfpr.sd.garagem.server.security.PasswordHasher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,6 +64,11 @@ public final class JsonUserRepository implements UserRepository {
     @Override
     public Optional<User> findByUsername(String username) {
         return Optional.ofNullable(usersByUsername.get(username));
+    }
+
+    @Override
+    public List<User> findAll() {
+        return new ArrayList<>(usersByUsername.values());
     }
 
     /**

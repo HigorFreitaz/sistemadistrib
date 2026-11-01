@@ -12,6 +12,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.DeleteVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleData;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVehiclesRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
@@ -208,6 +209,8 @@ public final class MainController {
             roleLabel.setText("Administrador");
             createVagaButton.setVisible(true);
             createVagaButton.setManaged(true);
+            updateVagaButton.setVisible(true);
+            updateVagaButton.setManaged(true);
             deleteVagaButton.setVisible(true);
             deleteVagaButton.setManaged(true);
             tabPane.getTabs().add(usuariosTab);
@@ -275,6 +278,14 @@ public final class MainController {
         Optional<String> type = typeDlg.showAndWait();
         if (type.isEmpty()) return;
 
+        ChoiceDialog<String> statusDlg = new ChoiceDialog<>("fora de servico",
+                "fora de servico", "ocupada", "reservada para carregamento de veiculos eletricos");
+        statusDlg.setHeaderText(null);
+        statusDlg.setTitle("Status inicial");
+        statusDlg.setContentText("Status da vaga:");
+        Optional<String> status = statusDlg.showAndWait();
+        if (status.isEmpty()) return;
+
         final int f = floor;
         setLoading(true);
         Task<Response> task = new Task<>() {
@@ -282,7 +293,7 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new CreateVagaRequest(token, spotName.get().trim(), f, type.get()));
+                    return connector.send(new CreateVagaRequest(token, spotName.get().trim(), f, type.get(), status.get()));
                 }
             }
         };
@@ -302,7 +313,7 @@ public final class MainController {
         if (selected == null) return;
 
         ChoiceDialog<String> statusDlg = new ChoiceDialog<>(selected.getStatus(),
-                "disponivel", "ocupada", "fora_de_servico");
+                "ocupada", "reservada para carregamento de veiculos eletricos", "fora de servico");
         statusDlg.setHeaderText("Vaga: " + selected.getSpotName());
         statusDlg.setTitle("Alterar status");
         statusDlg.setContentText("Novo status:");
@@ -555,12 +566,33 @@ public final class MainController {
 
     @FXML
     private void handleRefreshUsers() {
-        // getuser não retorna lista; usamos getvagas como referência.
-        // Para EP-2, admin vê a lista via getuser individual — listagem de
-        // todos os usuários não está no protocolo EP-2 ainda.
-        // Deixamos a tabela vazia e informamos o admin.
-        usersTable.setItems(FXCollections.observableArrayList());
-        statusLabel.setText("Lista de usuários não disponível no protocolo EP-2 (consulte por username individualmente).");
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new GetUsersRequest(token));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setLoading(false);
+            Response r = task.getValue();
+            if (r.getStatusCode() == StatusCode.OK) {
+                try {
+                    List<UserData> users = JsonSupport.GSON.fromJson(r.getData(),
+                            new TypeToken<List<UserData>>() {}.getType());
+                    usersTable.setItems(FXCollections.observableArrayList(users != null ? users : List.of()));
+                } catch (JsonSyntaxException e) {
+                    LOGGER.log(Level.WARNING, "resposta de getusers malformada", e);
+                }
+            } else if (r.getStatusCode() == StatusCode.UNAUTHORIZED) {
+                app.showLogin();
+            }
+        });
+        task.setOnFailed(event -> { setLoading(false); logWarning("falha ao carregar usuários", task.getException()); });
+        TaskRunner.runInBackground(task, "main-get-users-task");
     }
 
     @FXML

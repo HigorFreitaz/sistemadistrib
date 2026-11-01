@@ -68,7 +68,7 @@
                             <Button fx:id="refreshVagasButton" text="Atualizar" onAction="#handleRefreshVagas"
                                     styleClass="button-secondary"/>
                             <Button fx:id="updateVagaButton" text="Editar selecionada" onAction="#handleUpdateVaga"
-                                    disable="true" styleClass="button-secondary"/>
+                                    disable="true" styleClass="button-secondary" managed="false" visible="false"/>
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button fx:id="createVagaButton" text="+ Nova vaga" onAction="#handleCreateVaga"
                                     styleClass="button-primary" managed="false" visible="false"/>

@@ -6,6 +6,7 @@ public final class Methods {
     public static final String LOGOUT = "logout";
     public static final String REGISTER = "register";
     public static final String GET_USER = "getuser";
+    public static final String GET_USERS = "getusers";
     public static final String UPDATE_USER_NAME = "updateusername";
     public static final String UPDATE_USER_PASSWORD = "updateuserpassword";
     public static final String DELETE_USER = "deleteuser";

@@ -14,6 +14,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.DeleteVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleData;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVehiclesRequest;
@@ -79,6 +80,7 @@ public final class RequestDispatcher {
             case Methods.LOGOUT -> handleLogout(envelope);
             case Methods.REGISTER -> handleRegister(envelope);
             case Methods.GET_USER -> handleGetUser(envelope);
+            case Methods.GET_USERS -> handleGetUsers(envelope);
             case Methods.UPDATE_USER_NAME -> handleUpdateUserName(envelope);
             case Methods.UPDATE_USER_PASSWORD -> handleUpdateUserPassword(envelope);
             case Methods.DELETE_USER -> handleDeleteUser(envelope);
@@ -166,6 +168,16 @@ public final class RequestDispatcher {
                 new UserData(user.get().getName(), user.get().getUsername(), user.get().getRole()));
     }
 
+    private Response handleGetUsers(JsonObject envelope) {
+        GetUsersRequest request = JsonSupport.GSON.fromJson(envelope, GetUsersRequest.class);
+        Response adminCheck = verificarAdmin(request.getToken());
+        if (adminCheck != null) return adminCheck;
+        List<UserData> users = authService.getAllUsers().stream()
+                .map(u -> new UserData(u.getName(), u.getUsername(), u.getRole()))
+                .collect(Collectors.toList());
+        return Response.ok("Usuários obtidos com sucesso", users);
+    }
+
     private Response handleUpdateUserName(JsonObject envelope) {
         UpdateUserNameRequest request = JsonSupport.GSON.fromJson(envelope, UpdateUserNameRequest.class);
         Optional<User> requestor = authService.resolveUser(request.getToken());
@@ -226,7 +238,9 @@ public final class RequestDispatcher {
         if (request.getSpotName() == null || request.getSpotName().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         }
-        Vaga vaga = new Vaga(request.getSpotName(), "disponivel", request.getFloor(), request.getType(), null);
+        String status = (request.getStatus() != null && !request.getStatus().isBlank())
+                ? request.getStatus() : "fora de servico";
+        Vaga vaga = new Vaga(request.getSpotName(), status, request.getFloor(), request.getType(), null);
         boolean created = vagaRepository.save(vaga);
         return created
                 ? Response.created("Vaga criada com sucesso", null)
@@ -245,7 +259,7 @@ public final class RequestDispatcher {
 
     private Response handleUpdateVaga(JsonObject envelope) {
         UpdateVagaRequest request = JsonSupport.GSON.fromJson(envelope, UpdateVagaRequest.class);
-        Response authCheck = verificarToken(request.getToken());
+        Response authCheck = verificarAdmin(request.getToken());
         if (authCheck != null) return authCheck;
         if (request.getSpotName() == null || request.getSpotName().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "spotName é obrigatório.");

@@ -2,6 +2,7 @@ package br.edu.utfpr.sd.garagem.server.repository;
 
 import br.edu.utfpr.sd.garagem.common.model.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /** Acesso à base de usuários cadastrados. */
@@ -9,6 +10,9 @@ public interface UserRepository {
 
     /** Busca um usuário pelo username, se existir. */
     Optional<User> findByUsername(String username);
+
+    /** Retorna todos os usuários cadastrados. */
+    List<User> findAll();
 
     /**
      * Cadastra um novo usuário, se o username ainda não existir.

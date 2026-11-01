@@ -6,6 +6,7 @@ import br.edu.utfpr.sd.garagem.common.model.UserRole;
 import br.edu.utfpr.sd.garagem.server.repository.UserRepository;
 import br.edu.utfpr.sd.garagem.server.security.PasswordHasher;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -60,6 +61,11 @@ public final class AuthService {
     /** Busca os dados de um usuário cadastrado, para a operação {@code getuser}. */
     public Optional<User> getUserData(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    /** Retorna todos os usuários cadastrados (uso exclusivo do ADM). */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     /** Atualiza o {@code name} de um usuário existente. */
