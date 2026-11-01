@@ -80,8 +80,8 @@ class EndToEndSmokeTest {
         assertNotNull(token);
         assertTrue(!token.isBlank());
 
-        doLogin("admin", "senhaErrada9", StatusCode.UNAUTHORIZED);
-        doLogin("usuarioinexistente", "qualquerSenha123", StatusCode.UNAUTHORIZED);
+        doLogin("admin", "Senha@Errada9", StatusCode.UNAUTHORIZED);
+        doLogin("usuarioinexistente", "Qualquer@123", StatusCode.UNAUTHORIZED);
 
         doLogout(token, StatusCode.OK);
         doLogout(token, StatusCode.UNAUTHORIZED);
@@ -89,10 +89,10 @@ class EndToEndSmokeTest {
 
     @Test
     void cadastraNovoUsuarioELoga() throws Exception {
-        doRegister("novo.usuario", "SenhaForte9", StatusCode.CREATED);
-        doRegister("novo.usuario", "OutraSenha9", StatusCode.CONFLICT);
+        doRegister("novo.usuario", "Senha@Forte9", StatusCode.CREATED);
+        doRegister("novo.usuario", "Outra@Senha9", StatusCode.CONFLICT);
 
-        String token = doLogin("novo.usuario", "SenhaForte9", StatusCode.OK);
+        String token = doLogin("novo.usuario", "Senha@Forte9", StatusCode.OK);
         assertNotNull(token);
 
         doLogout(token, StatusCode.OK);

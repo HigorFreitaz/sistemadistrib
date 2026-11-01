@@ -122,9 +122,11 @@ public final class RequestDispatcher {
         if (request.getToken() == null || request.getToken().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
         }
-        authService.logout(request.getToken());
+        boolean loggedOut = authService.logout(request.getToken());
         listener.onSessionCountChanged(authService.activeSessionCount());
-        return Response.ok("Usuário deslogado com sucesso", null);
+        return loggedOut
+                ? Response.ok("Usuário deslogado com sucesso", null)
+                : Response.error(StatusCode.UNAUTHORIZED, "Sessão não encontrada ou já encerrada.");
     }
 
     private Response handleRegister(JsonObject envelope) {
