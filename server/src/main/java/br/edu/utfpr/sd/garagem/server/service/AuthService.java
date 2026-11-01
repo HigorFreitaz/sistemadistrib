@@ -43,7 +43,7 @@ public final class AuthService {
      * @return {@code true} se o cadastro foi criado; {@code false} se o username já estava em uso.
      */
     public boolean register(String name, String username, String password) {
-        User user = new User(name, username, PasswordHasher.hash(password), UserRole.CLIENTE);
+        User user = new User(name, username, PasswordHasher.hash(password), UserRole.USER);
         return userRepository.save(user);
     }
 
@@ -105,5 +105,21 @@ public final class AuthService {
     /** Derruba todas as sessões ativas de uma vez, a pedido do operador do servidor. */
     public void logoutAllSessions() {
         sessionService.logoutAll();
+    }
+
+    /** Resolve o usuário pelo token da sessão (para verificar role). */
+    public Optional<User> resolveUser(String token) {
+        Optional<Session> session = sessionService.findByToken(token);
+        if (session.isEmpty()) return Optional.empty();
+        return userRepository.findByUsername(session.get().getUsername());
+    }
+
+    /**
+     * Cadastra um novo usuário com o papel especificado.
+     * @return true se criado, false se username já existe.
+     */
+    public boolean registerWithRole(String name, String username, String password, UserRole role) {
+        User user = new User(name, username, PasswordHasher.hash(password), role);
+        return userRepository.save(user);
     }
 }

@@ -1,24 +1,20 @@
 package br.edu.utfpr.sd.garagem.common.protocol;
 
-/**
- * Carga de dados devolvida em {@code data} na resposta de {@code getuser}:
- * {@code { "name": "", "username": "" } }.
- */
+import br.edu.utfpr.sd.garagem.common.model.UserRole;
+
 public final class UserData {
 
     private final String name;
     private final String username;
+    private final UserRole role;
 
-    public UserData(String name, String username) {
+    public UserData(String name, String username, UserRole role) {
         this.name = name;
         this.username = username;
+        this.role = role;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getUsername() {
-        return username;
-    }
+    public String getName() { return name; }
+    public String getUsername() { return username; }
+    public UserRole getRole() { return role; }
 }

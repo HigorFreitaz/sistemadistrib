@@ -11,6 +11,7 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -29,6 +30,7 @@
         </HBox>
     </top>
     <center>
+        <ScrollPane fitToWidth="true">
         <StackPane>
             <padding>
                 <Insets top="24" right="24" bottom="24" left="24"/>
@@ -65,5 +67,6 @@
                 </VBox>
             </VBox>
         </StackPane>
+        </ScrollPane>
     </center>
 </BorderPane>

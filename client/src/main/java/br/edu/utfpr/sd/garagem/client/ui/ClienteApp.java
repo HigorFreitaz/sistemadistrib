@@ -6,6 +6,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.net.URL;
+
 import java.io.IOException;
 
 /**
@@ -104,7 +106,8 @@ public final class ClienteApp extends Application {
 
     private void setScene(Parent root) {
         Scene scene = new Scene(root, WIDTH, HEIGHT);
-        scene.getStylesheets().add(getClass().getResource("/css/app.css").toExternalForm());
+        URL cssUrl = getClass().getResource("/css/app.css");
+        if (cssUrl != null) scene.getStylesheets().add(cssUrl.toExternalForm());
         primaryStage.setScene(scene);
     }
 }

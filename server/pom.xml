@@ -60,6 +60,12 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>${javafx.mainClass}</mainClass>
+                    <options>
+                        <option>-Xms64m</option>
+                        <option>-Xmx256m</option>
+                        <option>-Xss512k</option>
+                        <option>-XX:ReservedCodeCacheSize=32m</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>

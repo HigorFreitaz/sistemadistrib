@@ -32,7 +32,7 @@
         </HBox>
     </top>
     <center>
-        <ScrollPane fitToWidth="true" styleClass="root">
+        <ScrollPane fitToWidth="true">
             <StackPane>
                 <padding>
                     <Insets top="24" right="24" bottom="24" left="24"/>
@@ -93,7 +93,7 @@
                         <Label fx:id="newPasswordSpecialHint" wrapText="true" styleClass="hint-invalid"
                                GridPane.rowIndex="8" GridPane.columnIndex="1"/>
                         <Label text="Confirmar nova senha" styleClass="field-label" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
-                        <PasswordField fx:id="confirmNewPasswordField" maxWidth="Infinity" promptText="Nova senha"
+                        <PasswordField fx:id="confirmNewPasswordField" maxWidth="Infinity" promptText="Confirmar nova senha"
                                        GridPane.rowIndex="9" GridPane.columnIndex="1"/>
                         <Label fx:id="confirmNewPasswordHint" wrapText="true" styleClass="hint-invalid"
                                GridPane.rowIndex="10" GridPane.columnIndex="1"/>

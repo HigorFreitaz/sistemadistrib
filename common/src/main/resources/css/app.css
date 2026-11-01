@@ -274,6 +274,13 @@
     -fx-background-color: #E5484D;
 }
 
+/* ---- scroll pane (fundo transparente para herdar o .root) ---- */
+.scroll-pane,
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
 /* ---- area de log (servidor) ---- */
 .log-area {
     -fx-control-inner-background: #10141C;

@@ -6,8 +6,12 @@ import br.edu.utfpr.sd.garagem.server.net.RequestDispatcher;
 import br.edu.utfpr.sd.garagem.server.net.ServerEventListener;
 import br.edu.utfpr.sd.garagem.server.repository.JsonSessionRepository;
 import br.edu.utfpr.sd.garagem.server.repository.JsonUserRepository;
+import br.edu.utfpr.sd.garagem.server.repository.JsonVagaRepository;
+import br.edu.utfpr.sd.garagem.server.repository.JsonVehicleRepository;
 import br.edu.utfpr.sd.garagem.server.repository.SessionRepository;
 import br.edu.utfpr.sd.garagem.server.repository.UserRepository;
+import br.edu.utfpr.sd.garagem.server.repository.VagaRepository;
+import br.edu.utfpr.sd.garagem.server.repository.VehicleRepository;
 import br.edu.utfpr.sd.garagem.server.service.AuthService;
 import br.edu.utfpr.sd.garagem.server.service.SessionService;
 import javafx.animation.PauseTransition;
@@ -38,6 +42,8 @@ public final class ServerController implements ServerEventListener {
     private static final Logger LOGGER = Logger.getLogger(ServerController.class.getName());
     private static final Path USERS_FILE = Path.of("dados", "usuarios.json");
     private static final Path SESSIONS_FILE = Path.of("dados", "sessoes.json");
+    private static final Path VAGAS_FILE = Path.of("dados", "vagas.json");
+    private static final Path VEICULOS_FILE = Path.of("dados", "veiculos.json");
     private static final Duration TOOLTIP_SHOW_DELAY = Duration.millis(150);
     private static final double TOOLTIP_VERTICAL_GAP = 8;
 
@@ -112,7 +118,9 @@ public final class ServerController implements ServerEventListener {
         UserRepository userRepository = new JsonUserRepository(USERS_FILE);
         SessionRepository sessionRepository = new JsonSessionRepository(SESSIONS_FILE);
         authService = new AuthService(userRepository, new SessionService(sessionRepository));
-        RequestDispatcher dispatcher = new RequestDispatcher(authService, this);
+        VagaRepository vagaRepository = new JsonVagaRepository(VAGAS_FILE);
+        VehicleRepository vehicleRepository = new JsonVehicleRepository(VEICULOS_FILE);
+        RequestDispatcher dispatcher = new RequestDispatcher(authService, vagaRepository, vehicleRepository, this);
         server = new GarageServer(port, dispatcher, this);
         try {
             server.start();
