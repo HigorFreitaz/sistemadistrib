@@ -23,7 +23,6 @@ public final class JsonUserRepository implements UserRepository {
 
     private static final Logger LOGGER = Logger.getLogger(JsonUserRepository.class.getName());
     private static final String DEFAULT_ADMIN_PASSWORD = "Admin123!";
-    private static final String LEGACY_ADMIN_PASSWORD = "Admin@123";
 
     private final Path file;
     private final Map<String, User> usersByUsername = new ConcurrentHashMap<>();
@@ -44,21 +43,8 @@ public final class JsonUserRepository implements UserRepository {
             if (usersFile != null && usersFile.getUsers() != null) {
                 usersFile.getUsers().forEach(user -> usersByUsername.put(user.getUsername(), user));
             }
-            migrateAdminIfNeeded();
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a base de usuarios em " + file, e);
-        }
-    }
-
-    private void migrateAdminIfNeeded() throws IOException {
-        User admin = usersByUsername.get("admin");
-        if (admin == null) return;
-        if (PasswordHasher.matches(LEGACY_ADMIN_PASSWORD, admin.getPasswordHash())) {
-            User updated = new User(admin.getName(), admin.getUsername(),
-                    PasswordHasher.hash(DEFAULT_ADMIN_PASSWORD), UserRole.ADMIN);
-            usersByUsername.put("admin", updated);
-            persist();
-            LOGGER.warning("Senha do admin migrada de legado para o padrao atual.");
         }
     }
 
