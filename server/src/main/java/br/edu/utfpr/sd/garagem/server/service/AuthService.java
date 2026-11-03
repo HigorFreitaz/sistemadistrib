@@ -90,15 +90,15 @@ public final class AuthService {
     }
 
     /**
-     * Remove o cadastro de um usuário e encerra sua sessão (ver
-     * {@link SessionService#logout}) — o usuário não existe mais, então o
-     * token dele não pode continuar valendo.
+     * Remove o cadastro de um usuário e invalida a sessão DELE (não a do
+     * chamador). O usuário não existe mais, então o token dele não pode
+     * continuar valendo.
      * @return {@code true} se o usuário existia e foi removido.
      */
-    public boolean deleteUser(String username, String token) {
+    public boolean deleteUser(String username) {
         boolean deleted = userRepository.deleteByUsername(username);
         if (deleted) {
-            sessionService.logout(token);
+            sessionService.logoutByUsername(username);
         }
         return deleted;
     }

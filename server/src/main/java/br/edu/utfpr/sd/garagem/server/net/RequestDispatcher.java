@@ -229,7 +229,18 @@ public final class RequestDispatcher {
                 && !requestor.get().getUsername().equals(request.getUsername())) {
             return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
-        boolean deleted = authService.deleteUser(request.getUsername(), request.getToken());
+        // não pode deletar usuário com veículo estacionado
+        boolean temVagaOcupada = vehicleRepository.findByOwner(request.getUsername()).stream()
+                .anyMatch(v -> vagaRepository.findAll().stream()
+                        .anyMatch(vaga -> v.getLicensePlate().equals(vaga.getLicensePlate())));
+        if (temVagaOcupada) {
+            return Response.error(StatusCode.CONFLICT, "Usuário possui veículo estacionado.");
+        }
+        // cascade: remove veículos do usuário
+        vehicleRepository.findByOwner(request.getUsername())
+                .forEach(v -> vehicleRepository.deleteByLicensePlate(v.getLicensePlate()));
+        // remove usuário e invalida a sessão DELE
+        boolean deleted = authService.deleteUser(request.getUsername());
         listener.onSessionCountChanged(authService.activeSessionCount());
         return deleted
                 ? Response.ok("Usuário deletado com sucesso", null)
@@ -425,8 +436,14 @@ public final class RequestDispatcher {
         if (!user.get().getUsername().equals(veiculo.getOwnerUsername())) {
             return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
+        // não pode alterar veículo estacionado
+        boolean estaEstacionado = vagaRepository.findAll().stream()
+                .anyMatch(v -> veiculo.getLicensePlate().equals(v.getLicensePlate()));
+        if (estaEstacionado) {
+            return Response.error(StatusCode.CONFLICT, "Veículo está estacionado em uma vaga.");
+        }
         veiculo.setBrand(request.getBrand());
-        if (request.getModel() != null) veiculo.setModel(request.getModel());
+        veiculo.setModel(request.getModel()); // null = limpar modelo (opcional)
         if (request.getType() != null) veiculo.setType(request.getType());
         vehicleRepository.update(veiculo);
         return Response.ok("Veículo atualizado com sucesso", null);
@@ -442,6 +459,12 @@ public final class RequestDispatcher {
         if (user.get().getRole() != UserRole.ADMIN
                 && !user.get().getUsername().equals(veiculo.get().getOwnerUsername())) {
             return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+        }
+        // não pode excluir veículo estacionado
+        boolean estaEstacionado = vagaRepository.findAll().stream()
+                .anyMatch(v -> request.getLicensePlate().equals(v.getLicensePlate()));
+        if (estaEstacionado) {
+            return Response.error(StatusCode.CONFLICT, "Veículo está estacionado em uma vaga.");
         }
         vehicleRepository.deleteByLicensePlate(request.getLicensePlate());
         return Response.ok("Veículo removido com sucesso", null);

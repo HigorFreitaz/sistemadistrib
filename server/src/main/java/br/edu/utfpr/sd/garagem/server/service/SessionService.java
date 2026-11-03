@@ -84,6 +84,17 @@ public final class SessionService {
         return sessionsByToken.size();
     }
 
+    /** Encerra a sessão do usuário pelo username (usado ao deletar uma conta). */
+    public boolean logoutByUsername(String username) {
+        synchronized (lock) {
+            String token = tokenByUsername.remove(username);
+            if (token == null) return false;
+            sessionsByToken.remove(token);
+            repository.saveAll(sessionsByToken.values());
+            return true;
+        }
+    }
+
     /** Encerra todas as sessões de uma vez — ação administrativa do operador do servidor. */
     public void logoutAll() {
         synchronized (lock) {
