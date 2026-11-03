@@ -76,7 +76,7 @@ class EndToEndSmokeTest {
 
     @Test
     void fluxoCompletoDeLoginELogout() throws Exception {
-        String token = doLogin("admin", "Admin@123", StatusCode.OK);
+        String token = doLogin("admin", "Admin123!", StatusCode.OK);
         assertNotNull(token);
         assertTrue(!token.isBlank());
 
@@ -102,7 +102,7 @@ class EndToEndSmokeTest {
     @Test
     void servidorFechaConexaoAposResponder() throws Exception {
         try (TestClient client = new TestClient(port)) {
-            client.login("admin", "Admin@123", StatusCode.OK);
+            client.login("admin", "Admin123!", StatusCode.OK);
             assertTrue(client.isClosedByPeer(), "servidor deveria fechar a conexao logo apos responder");
         }
     }

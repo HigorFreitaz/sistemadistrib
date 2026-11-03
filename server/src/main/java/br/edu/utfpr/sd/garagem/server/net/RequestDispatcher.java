@@ -240,9 +240,7 @@ public final class RequestDispatcher {
         if (request.getSpotName() == null || request.getSpotName().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         }
-        String status = (request.getStatus() != null && !request.getStatus().isBlank())
-                ? request.getStatus() : "fora de servico";
-        Vaga vaga = new Vaga(request.getSpotName(), status, request.getFloor(), request.getType(), null);
+        Vaga vaga = new Vaga(request.getSpotName(), "disponivel", request.getFloor(), request.getType(), null);
         boolean created = vagaRepository.save(vaga);
         return created
                 ? Response.created("Vaga criada com sucesso", null)

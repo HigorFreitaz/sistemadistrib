@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 public final class JsonUserRepository implements UserRepository {
 
     private static final Logger LOGGER = Logger.getLogger(JsonUserRepository.class.getName());
-    private static final String DEFAULT_ADMIN_PASSWORD = "Admin@123";
+    private static final String DEFAULT_ADMIN_PASSWORD = "Admin123!";
 
     private final Path file;
     private final Map<String, User> usersByUsername = new ConcurrentHashMap<>();

@@ -278,14 +278,6 @@ public final class MainController {
         Optional<String> type = typeDlg.showAndWait();
         if (type.isEmpty()) return;
 
-        ChoiceDialog<String> statusDlg = new ChoiceDialog<>("fora de servico",
-                "fora de servico", "ocupada", "reservada para carregamento de veiculos eletricos");
-        statusDlg.setHeaderText(null);
-        statusDlg.setTitle("Status inicial");
-        statusDlg.setContentText("Status da vaga:");
-        Optional<String> status = statusDlg.showAndWait();
-        if (status.isEmpty()) return;
-
         final int f = floor;
         setLoading(true);
         Task<Response> task = new Task<>() {
@@ -293,7 +285,7 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new CreateVagaRequest(token, spotName.get().trim(), f, type.get(), status.get()));
+                    return connector.send(new CreateVagaRequest(token, spotName.get().trim(), f, type.get()));
                 }
             }
         };
@@ -313,7 +305,7 @@ public final class MainController {
         if (selected == null) return;
 
         ChoiceDialog<String> statusDlg = new ChoiceDialog<>(selected.getStatus(),
-                "ocupada", "reservada para carregamento de veiculos eletricos", "fora de servico");
+                "disponivel", "fora_de_servico", "ocupada");
         statusDlg.setHeaderText("Vaga: " + selected.getSpotName());
         statusDlg.setTitle("Alterar status");
         statusDlg.setContentText("Novo status:");
