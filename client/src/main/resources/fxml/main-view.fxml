@@ -44,24 +44,25 @@
         </HBox>
     </top>
     <center>
-        <VBox spacing="0">
+        <VBox spacing="0" style="-fx-background-color: #EEF1F6;">
             <padding>
                 <Insets top="16" right="16" bottom="12" left="16"/>
             </padding>
 
             <HBox alignment="CENTER_LEFT" spacing="10">
-                <padding><Insets bottom="10"/></padding>
+                <padding><Insets bottom="12"/></padding>
                 <Label fx:id="usernameLabel" styleClass="card-title"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="roleLabel" styleClass="status-label"/>
+                <Label fx:id="roleLabel" style="-fx-background-color: #EAF0FF; -fx-text-fill: #3A6FF7; -fx-background-radius: 12; -fx-padding: 3 12; -fx-font-size: 11px; -fx-font-weight: bold;"/>
             </HBox>
 
-            <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+            <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS"
+                     style="-fx-background-radius: 10 10 0 0;">
 
                 <!-- TAB VAGAS (todos) -->
                 <Tab fx:id="vagasTab" text="Vagas">
-                    <VBox spacing="8">
-                        <padding><Insets top="10" right="4" bottom="4" left="4"/></padding>
+                    <VBox spacing="10">
+                        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
 
                         <!-- barra de ações -->
                         <HBox spacing="8" alignment="CENTER_LEFT">
@@ -84,8 +85,6 @@
                             <Label fx:id="findVehicleResult" wrapText="true" styleClass="status-label"/>
                         </HBox>
 
-                        <Separator/>
-
                         <TableView fx:id="vagasTable" VBox.vgrow="ALWAYS" minHeight="200">
                             <columns>
                                 <TableColumn fx:id="vagaSpotNameCol" text="Vaga" prefWidth="80"/>
@@ -100,8 +99,8 @@
 
                 <!-- TAB VEÍCULOS (usuário comum) -->
                 <Tab fx:id="veiculosTab" text="Meus Veículos">
-                    <VBox spacing="8">
-                        <padding><Insets top="10" right="4" bottom="4" left="4"/></padding>
+                    <VBox spacing="10">
+                        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
 
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Button fx:id="refreshVehiclesButton" text="Atualizar" onAction="#handleRefreshVehicles"
@@ -114,8 +113,6 @@
                             <Button text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
                                     styleClass="button-primary"/>
                         </HBox>
-
-                        <Separator/>
 
                         <TableView fx:id="vehiclesTable" VBox.vgrow="ALWAYS" minHeight="200">
                             <columns>
@@ -130,8 +127,8 @@
 
                 <!-- TAB USUÁRIOS (admin) -->
                 <Tab fx:id="usuariosTab" text="Usuarios">
-                    <VBox spacing="8">
-                        <padding><Insets top="10" right="4" bottom="4" left="4"/></padding>
+                    <VBox spacing="10">
+                        <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
 
                         <HBox spacing="8" alignment="CENTER_LEFT">
                             <Button text="Atualizar" onAction="#handleRefreshUsers" styleClass="button-secondary"/>
@@ -142,8 +139,6 @@
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button text="+ Criar usuário" onAction="#handleCreateUser" styleClass="button-primary"/>
                         </HBox>
-
-                        <Separator/>
 
                         <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" minHeight="200">
                             <columns>
