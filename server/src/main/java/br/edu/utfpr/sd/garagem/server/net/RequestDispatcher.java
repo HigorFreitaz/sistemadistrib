@@ -46,9 +46,12 @@ import com.google.gson.JsonParser;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class RequestDispatcher {
+
+    private static final Set<String> TIPOS_VALIDOS = Set.of("combustao", "eletrico");
 
     private final AuthService authService;
     private final VagaRepository vagaRepository;
@@ -134,6 +137,11 @@ public final class RequestDispatcher {
         Response invalido = validarCadastro(request.getName(), request.getUsername(), request.getPassword());
         if (invalido != null) return invalido;
 
+        // role informado sem token (combinação incompleta) → rejeitar
+        if (request.getRole() != null && (request.getToken() == null || request.getToken().isBlank())) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+
         if (request.getRole() != null && request.getToken() != null) {
             Optional<User> requestor = authService.resolveUser(request.getToken());
             if (requestor.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
@@ -160,10 +168,7 @@ public final class RequestDispatcher {
         }
         Optional<User> requestor = authService.resolveUser(request.getToken());
         if (requestor.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
-        if (requestor.get().getRole() != UserRole.ADMIN
-                && !requestor.get().getUsername().equals(request.getUsername())) {
-            return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
-        }
+        // qualquer usuário autenticado pode consultar qualquer outro usuário
         Optional<User> user = authService.getUserData(request.getUsername());
         if (user.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
         return Response.ok("Usuário encontrado com sucesso",
@@ -186,7 +191,7 @@ public final class RequestDispatcher {
         if (requestor.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (requestor.get().getRole() != UserRole.ADMIN
                 && !requestor.get().getUsername().equals(request.getUsername())) {
-            return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
         if (!NameValidator.isValid(request.getName())) {
             return Response.error(StatusCode.BAD_REQUEST, "Nome do usuário fora do padrão");
@@ -222,7 +227,7 @@ public final class RequestDispatcher {
         if (requestor.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (requestor.get().getRole() != UserRole.ADMIN
                 && !requestor.get().getUsername().equals(request.getUsername())) {
-            return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
         boolean deleted = authService.deleteUser(request.getUsername(), request.getToken());
         listener.onSessionCountChanged(authService.activeSessionCount());
@@ -237,8 +242,12 @@ public final class RequestDispatcher {
         CreateVagaRequest request = JsonSupport.GSON.fromJson(envelope, CreateVagaRequest.class);
         Response adminCheck = verificarAdmin(request.getToken());
         if (adminCheck != null) return adminCheck;
-        if (request.getSpotName() == null || request.getSpotName().isBlank()) {
+        if (request.getSpotName() == null || request.getSpotName().isBlank()
+                || request.getSpotName().length() > 4) {
             return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+        if (!TIPOS_VALIDOS.contains(request.getType())) {
+            return Response.error(StatusCode.BAD_REQUEST, "Tipo de vaga inválido. Use: combustao ou eletrico.");
         }
         Vaga vaga = new Vaga(request.getSpotName(), "disponivel", request.getFloor(), request.getType(), null);
         boolean created = vagaRepository.save(vaga);
@@ -259,8 +268,14 @@ public final class RequestDispatcher {
 
     private Response handleUpdateVaga(JsonObject envelope) {
         UpdateVagaRequest request = JsonSupport.GSON.fromJson(envelope, UpdateVagaRequest.class);
-        Response authCheck = verificarAdmin(request.getToken());
-        if (authCheck != null) return authCheck;
+        if (request.getToken() == null || request.getToken().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
+        }
+        Optional<User> userOpt = authService.resolveUser(request.getToken());
+        if (userOpt.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        User caller = userOpt.get();
+        boolean isAdmin = caller.getRole() == UserRole.ADMIN;
+
         if (request.getSpotName() == null || request.getSpotName().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "spotName é obrigatório.");
         }
@@ -268,15 +283,56 @@ public final class RequestDispatcher {
         if (vagaOpt.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
         Vaga vaga = vagaOpt.get();
 
-        if (request.getNewSpotName() != null && !request.getNewSpotName().isBlank()
-                && !request.getNewSpotName().equals(request.getSpotName())) {
+        // renomear — admin only
+        String newSpotName = request.getNewSpotName();
+        if (newSpotName != null && !newSpotName.isBlank() && !newSpotName.equals(request.getSpotName())) {
+            if (!isAdmin) return Response.error(StatusCode.UNAUTHORIZED, "Apenas administradores podem realizar esta operação.");
+            if (!"disponivel".equals(vaga.getStatus()) && !"fora_de_servico".equals(vaga.getStatus())) {
+                return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
+            }
+            if (vagaRepository.findBySpotName(newSpotName).isPresent()) {
+                return Response.error(StatusCode.CONFLICT, "Já existe uma vaga com esse nome.");
+            }
             vagaRepository.deleteBySpotName(vaga.getSpotName());
-            vaga.setSpotName(request.getNewSpotName());
+            vaga.setSpotName(newSpotName);
             vagaRepository.save(vaga);
             return Response.ok("Vaga atualizada com sucesso", null);
         }
-        if (request.getStatus() != null) vaga.setStatus(request.getStatus());
-        if (request.getLicensePlate() != null) vaga.setLicensePlate(request.getLicensePlate());
+
+        String newStatus = request.getStatus();
+        String newPlate = request.getLicensePlate();
+
+        // usuário estacionando — plate fornecida + status ocupada
+        if (!isAdmin && newPlate != null && !newPlate.isBlank() && "ocupada".equals(newStatus)) {
+            if (!"disponivel".equals(vaga.getStatus())) {
+                return Response.error(StatusCode.CONFLICT, "Vaga não está disponível.");
+            }
+            vaga.setLicensePlate(newPlate);
+            vaga.setStatus("ocupada");
+            vagaRepository.update(vaga);
+            return Response.ok("Vaga atualizada com sucesso", null);
+        }
+
+        // usuário liberando — status disponivel, vaga estava ocupada
+        if (!isAdmin && "disponivel".equals(newStatus) && "ocupada".equals(vaga.getStatus())) {
+            String currentPlate = vaga.getLicensePlate();
+            if (currentPlate != null) {
+                Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(currentPlate);
+                if (veiculoOpt.isEmpty() || !veiculoOpt.get().getOwnerUsername().equals(caller.getUsername())) {
+                    return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
+                }
+            }
+            vaga.setLicensePlate(null);
+            vaga.setStatus("disponivel");
+            vagaRepository.update(vaga);
+            return Response.ok("Vaga atualizada com sucesso", null);
+        }
+
+        // demais operações — apenas admin
+        if (!isAdmin) return Response.error(StatusCode.UNAUTHORIZED, "Apenas administradores podem realizar esta operação.");
+
+        if (newStatus != null) vaga.setStatus(newStatus);
+        if (newPlate != null) vaga.setLicensePlate(newPlate.isBlank() ? null : newPlate);
         if (request.getFloor() != null) vaga.setFloor(request.getFloor());
         vagaRepository.update(vaga);
         return Response.ok("Vaga atualizada com sucesso", null);
@@ -286,10 +342,13 @@ public final class RequestDispatcher {
         DeleteVagaRequest request = JsonSupport.GSON.fromJson(envelope, DeleteVagaRequest.class);
         Response adminCheck = verificarAdmin(request.getToken());
         if (adminCheck != null) return adminCheck;
-        boolean deleted = vagaRepository.deleteBySpotName(request.getSpotName());
-        return deleted
-                ? Response.ok("Vaga removida com sucesso", null)
-                : Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
+        Optional<Vaga> vagaOpt = vagaRepository.findBySpotName(request.getSpotName());
+        if (vagaOpt.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
+        if ("ocupada".equals(vagaOpt.get().getStatus())) {
+            return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
+        }
+        vagaRepository.deleteBySpotName(request.getSpotName());
+        return Response.ok("Vaga removida com sucesso", null);
     }
 
     // ---- veiculos ----
@@ -298,9 +357,16 @@ public final class RequestDispatcher {
         CreateVehicleRequest request = JsonSupport.GSON.fromJson(envelope, CreateVehicleRequest.class);
         Optional<User> user = authService.resolveUser(request.getToken());
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
-        if (request.getBrand() == null || request.getModel() == null
-                || request.getType() == null || request.getLicensePlate() == null) {
+        if (user.get().getRole() == UserRole.ADMIN) {
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        }
+        if (request.getBrand() == null || request.getBrand().isBlank()
+                || request.getType() == null || request.getLicensePlate() == null
+                || request.getLicensePlate().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+        if (!TIPOS_VALIDOS.contains(request.getType())) {
+            return Response.error(StatusCode.BAD_REQUEST, "Tipo de veículo inválido. Use: combustao ou eletrico.");
         }
         Veiculo veiculo = new Veiculo(request.getBrand(), request.getModel(), request.getType(),
                 request.getLicensePlate(), user.get().getUsername());
@@ -314,6 +380,9 @@ public final class RequestDispatcher {
         GetVehiclesRequest request = JsonSupport.GSON.fromJson(envelope, GetVehiclesRequest.class);
         Optional<User> user = authService.resolveUser(request.getToken());
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        if (user.get().getRole() == UserRole.ADMIN) {
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        }
         List<VehicleData> vehicles = vehicleRepository.findByOwner(user.get().getUsername()).stream()
                 .map(v -> new VehicleData(v.getBrand(), v.getModel(), v.getType(), v.getLicensePlate()))
                 .collect(Collectors.toList());
@@ -324,11 +393,15 @@ public final class RequestDispatcher {
         GetVehicleRequest request = JsonSupport.GSON.fromJson(envelope, GetVehicleRequest.class);
         Optional<User> user = authService.resolveUser(request.getToken());
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        if (request.getLicensePlate() == null || request.getLicensePlate().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Placa não fornecida.");
+        }
         Optional<Veiculo> veiculo = vehicleRepository.findByLicensePlate(request.getLicensePlate());
         if (veiculo.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+        // admin pode ver qualquer veículo; user só o próprio
         if (user.get().getRole() != UserRole.ADMIN
                 && !user.get().getUsername().equals(veiculo.get().getOwnerUsername())) {
-            return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
+            return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
         Veiculo v = veiculo.get();
         return Response.ok("Veículo encontrado com sucesso",
@@ -339,13 +412,20 @@ public final class RequestDispatcher {
         UpdateVehicleRequest request = JsonSupport.GSON.fromJson(envelope, UpdateVehicleRequest.class);
         Optional<User> user = authService.resolveUser(request.getToken());
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        if (user.get().getRole() == UserRole.ADMIN) {
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        }
+        // brand obrigatório
+        if (request.getBrand() == null || request.getBrand().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
         Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(request.getLicensePlate());
         if (veiculoOpt.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         Veiculo veiculo = veiculoOpt.get();
         if (!user.get().getUsername().equals(veiculo.getOwnerUsername())) {
-            return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
+            return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
-        if (request.getBrand() != null) veiculo.setBrand(request.getBrand());
+        veiculo.setBrand(request.getBrand());
         if (request.getModel() != null) veiculo.setModel(request.getModel());
         if (request.getType() != null) veiculo.setType(request.getType());
         vehicleRepository.update(veiculo);
@@ -358,9 +438,10 @@ public final class RequestDispatcher {
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         Optional<Veiculo> veiculo = vehicleRepository.findByLicensePlate(request.getLicensePlate());
         if (veiculo.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+        // admin pode deletar qualquer veículo; user só o próprio
         if (user.get().getRole() != UserRole.ADMIN
                 && !user.get().getUsername().equals(veiculo.get().getOwnerUsername())) {
-            return Response.error(StatusCode.FORBIDDEN, "Operação não autorizada.");
+            return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
         vehicleRepository.deleteByLicensePlate(request.getLicensePlate());
         return Response.ok("Veículo removido com sucesso", null);
@@ -370,6 +451,9 @@ public final class RequestDispatcher {
         FindVehicleRequest request = JsonSupport.GSON.fromJson(envelope, FindVehicleRequest.class);
         Response authCheck = verificarToken(request.getToken());
         if (authCheck != null) return authCheck;
+        if (request.getLicensePlate() == null || request.getLicensePlate().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Placa não fornecida.");
+        }
         Optional<Vaga> vaga = vagaRepository.findAll().stream()
                 .filter(v -> request.getLicensePlate().equals(v.getLicensePlate()))
                 .findFirst();
@@ -387,7 +471,7 @@ public final class RequestDispatcher {
         Optional<Session> session = authService.resolveSession(token);
         if (session.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (!session.get().getUsername().equals(username)) {
-            return Response.error(StatusCode.FORBIDDEN, "Sessão expirada ou encerrada.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
         return null;
     }
@@ -408,7 +492,7 @@ public final class RequestDispatcher {
         Optional<User> user = authService.resolveUser(token);
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (user.get().getRole() != UserRole.ADMIN) {
-            return Response.error(StatusCode.FORBIDDEN, "Apenas administradores podem realizar esta operação.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
         return null;
     }

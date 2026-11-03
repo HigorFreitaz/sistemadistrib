@@ -205,17 +205,20 @@ public final class MainController {
     }
 
     private void applyRoleUI() {
+        // botão de ação na vaga: visível para todos (texto diferente por papel)
+        updateVagaButton.setVisible(true);
+        updateVagaButton.setManaged(true);
+
         if (role == UserRole.ADMIN) {
             roleLabel.setText("Administrador");
             createVagaButton.setVisible(true);
             createVagaButton.setManaged(true);
-            updateVagaButton.setVisible(true);
-            updateVagaButton.setManaged(true);
             deleteVagaButton.setVisible(true);
             deleteVagaButton.setManaged(true);
             tabPane.getTabs().add(usuariosTab);
         } else {
             roleLabel.setText("Usuário");
+            updateVagaButton.setText("Estacionar / Liberar");
         }
     }
 
@@ -304,6 +307,12 @@ public final class MainController {
         VagaData selected = vagasTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
 
+        if (role != UserRole.ADMIN) {
+            handleEstacionar(selected);
+            return;
+        }
+
+        // --- fluxo admin: editar status, placa, renomear ---
         ChoiceDialog<String> statusDlg = new ChoiceDialog<>(selected.getStatus(),
                 "disponivel", "fora_de_servico", "ocupada");
         statusDlg.setHeaderText("Vaga: " + selected.getSpotName());
@@ -338,6 +347,54 @@ public final class MainController {
         });
         task.setOnFailed(event -> { setLoading(false); showError("Falha ao atualizar vaga."); });
         TaskRunner.runInBackground(task, "main-update-vaga-task");
+    }
+
+    private void handleEstacionar(VagaData vaga) {
+        if ("fora_de_servico".equals(vaga.getStatus())) {
+            showError("Esta vaga está fora de serviço e não pode ser utilizada.");
+            return;
+        }
+
+        final String newStatus;
+        final String newPlate;
+
+        if ("disponivel".equals(vaga.getStatus())) {
+            TextInputDialog plateDlg = new TextInputDialog();
+            plateDlg.setTitle("Estacionar");
+            plateDlg.setHeaderText("Vaga: " + vaga.getSpotName() + " (disponível)");
+            plateDlg.setContentText("Placa do seu veículo:");
+            Optional<String> plate = plateDlg.showAndWait();
+            if (plate.isEmpty() || plate.get().isBlank()) return;
+            newStatus = "ocupada";
+            newPlate = plate.get().trim();
+        } else {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Liberar a vaga '" + vaga.getSpotName() + "'?", ButtonType.YES, ButtonType.NO);
+            confirm.setHeaderText(null);
+            if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
+            newStatus = "disponivel";
+            newPlate = null;
+        }
+
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new UpdateVagaRequest(token, vaga.getSpotName(),
+                            null, newStatus, newPlate, null));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setLoading(false);
+            Response r = task.getValue();
+            if (r.getStatusCode() == StatusCode.OK) handleRefreshVagas();
+            else showError(r.getMessage());
+        });
+        task.setOnFailed(event -> { setLoading(false); showError("Falha ao atualizar vaga."); });
+        TaskRunner.runInBackground(task, "main-estacionar-task");
     }
 
     @FXML
