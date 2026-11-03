@@ -27,10 +27,10 @@
             </StackPane>
             <VBox spacing="4" HBox.hgrow="ALWAYS">
                 <Label text="SD Garagem" styleClass="app-title-on-dark"/>
-                <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark" wrapText="true"/>
+                <Label text="Rastreador de Ocupacao de Garagens de Estacionamento" styleClass="app-subtitle-on-dark"/>
             </VBox>
             <Button fx:id="profileButton" onAction="#handleOpenProfile" styleClass="button-secondary-on-dark"
-                    minWidth="40" prefWidth="40" contentDisplay="GRAPHIC_ONLY">
+                    prefWidth="36" prefHeight="36" contentDisplay="GRAPHIC_ONLY">
                 <graphic>
                     <SVGPath fill="white"
                              content="M8 8c2.21 0 4-1.79 4-4S10.21 0 8 0 4 1.79 4 4s1.79 4 4 4zm0 2C5.33 10 0 11.34 0 14v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -38,11 +38,11 @@
                 <tooltip><Tooltip text="Meu perfil"/></tooltip>
             </Button>
             <Button fx:id="logoutButton" text="Sair" onAction="#handleLogout" styleClass="button-secondary-on-dark"
-                    minWidth="70"/>
+                    minWidth="60"/>
         </HBox>
     </top>
     <center>
-        <VBox styleClass="page-bg" spacing="0">
+        <VBox styleClass="page-bg" spacing="0" maxWidth="Infinity" maxHeight="Infinity">
             <padding><Insets top="20" right="20" bottom="16" left="20"/></padding>
 
             <!-- barra de boas-vindas -->
@@ -54,24 +54,27 @@
             </HBox>
 
             <!-- card principal com as abas -->
-            <VBox VBox.vgrow="ALWAYS" styleClass="main-card" spacing="0">
+            <VBox VBox.vgrow="ALWAYS" styleClass="main-card" maxWidth="Infinity" maxHeight="Infinity" spacing="0">
 
-                <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
 
                     <!-- TAB VAGAS -->
                     <Tab fx:id="vagasTab" text="Vagas">
-                        <VBox spacing="12">
-                            <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                        <VBox spacing="10" maxWidth="Infinity" maxHeight="Infinity">
+                            <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Button fx:id="refreshVagasButton" text="Atualizar" onAction="#handleRefreshVagas"
-                                        styleClass="button-secondary"/>
+                                <!-- ícone de reload -->
+                                <Button fx:id="refreshVagasButton" text="↺" onAction="#handleRefreshVagas"
+                                        styleClass="button-reload">
+                                    <tooltip><Tooltip text="Atualizar lista de vagas"/></tooltip>
+                                </Button>
                                 <Button fx:id="updateVagaButton" text="Editar selecionada" onAction="#handleUpdateVaga"
                                         disable="true" styleClass="button-secondary" managed="false" visible="false"/>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <Button fx:id="createVagaButton" text="+ Nova vaga" onAction="#handleCreateVaga"
                                         styleClass="button-primary" managed="false" visible="false"/>
-                                <Button fx:id="deleteVagaButton" text="Remover vaga" onAction="#handleDeleteVaga"
+                                <Button fx:id="deleteVagaButton" text="Remover" onAction="#handleDeleteVaga"
                                         disable="true" styleClass="button-danger" managed="false" visible="false"/>
                             </HBox>
 
@@ -79,16 +82,16 @@
                                 <Label text="Localizar placa:" styleClass="field-label"/>
                                 <TextField fx:id="findPlateField" promptText="Ex: ABC1234" prefWidth="140"/>
                                 <Button text="Buscar" onAction="#handleFindVehicle" styleClass="button-secondary"/>
-                                <Label fx:id="findVehicleResult" wrapText="true" styleClass="status-label"/>
+                                <Label fx:id="findVehicleResult" wrapText="true" styleClass="status-label" HBox.hgrow="ALWAYS"/>
                             </HBox>
 
-                            <TableView fx:id="vagasTable" VBox.vgrow="ALWAYS" minHeight="200">
+                            <TableView fx:id="vagasTable" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
                                 <columns>
-                                    <TableColumn fx:id="vagaSpotNameCol" text="Vaga" prefWidth="80"/>
-                                    <TableColumn fx:id="vagaFloorCol" text="Andar" prefWidth="60"/>
-                                    <TableColumn fx:id="vagaTypeCol" text="Tipo" prefWidth="90"/>
-                                    <TableColumn fx:id="vagaStatusCol" text="Status" prefWidth="130"/>
-                                    <TableColumn fx:id="vagaPlateCol" text="Placa" prefWidth="110"/>
+                                    <TableColumn fx:id="vagaSpotNameCol" text="Vaga"   prefWidth="80"/>
+                                    <TableColumn fx:id="vagaFloorCol"    text="Andar"  prefWidth="70"/>
+                                    <TableColumn fx:id="vagaTypeCol"     text="Tipo"   prefWidth="100"/>
+                                    <TableColumn fx:id="vagaStatusCol"   text="Status" prefWidth="130"/>
+                                    <TableColumn fx:id="vagaPlateCol"    text="Placa"  prefWidth="120"/>
                                 </columns>
                             </TableView>
                         </VBox>
@@ -96,27 +99,29 @@
 
                     <!-- TAB VEÍCULOS -->
                     <Tab fx:id="veiculosTab" text="Meus Veículos">
-                        <VBox spacing="12">
-                            <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                        <VBox spacing="10" maxWidth="Infinity" maxHeight="Infinity">
+                            <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Button fx:id="refreshVehiclesButton" text="Atualizar" onAction="#handleRefreshVehicles"
-                                        styleClass="button-secondary"/>
+                                <Button fx:id="refreshVehiclesButton" text="↺" onAction="#handleRefreshVehicles"
+                                        styleClass="button-reload">
+                                    <tooltip><Tooltip text="Atualizar lista de veículos"/></tooltip>
+                                </Button>
                                 <Button fx:id="editVehicleButton" text="Editar selecionado" onAction="#handleEditVehicle"
                                         disable="true" styleClass="button-secondary"/>
-                                <Button fx:id="deleteVehicleButton" text="Remover selecionado" onAction="#handleDeleteVehicle"
+                                <Button fx:id="deleteVehicleButton" text="Remover" onAction="#handleDeleteVehicle"
                                         disable="true" styleClass="button-danger"/>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <Button text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
                                         styleClass="button-primary"/>
                             </HBox>
 
-                            <TableView fx:id="vehiclesTable" VBox.vgrow="ALWAYS" minHeight="200">
+                            <TableView fx:id="vehiclesTable" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
                                 <columns>
-                                    <TableColumn fx:id="vehicleBrandCol" text="Marca" prefWidth="110"/>
-                                    <TableColumn fx:id="vehicleModelCol" text="Modelo" prefWidth="130"/>
-                                    <TableColumn fx:id="vehicleTypeCol" text="Tipo" prefWidth="90"/>
-                                    <TableColumn fx:id="vehiclePlateCol" text="Placa" prefWidth="110"/>
+                                    <TableColumn fx:id="vehicleBrandCol" text="Marca"  prefWidth="120"/>
+                                    <TableColumn fx:id="vehicleModelCol" text="Modelo" prefWidth="150"/>
+                                    <TableColumn fx:id="vehicleTypeCol"  text="Tipo"   prefWidth="100"/>
+                                    <TableColumn fx:id="vehiclePlateCol" text="Placa"  prefWidth="120"/>
                                 </columns>
                             </TableView>
                         </VBox>
@@ -124,24 +129,26 @@
 
                     <!-- TAB USUÁRIOS (admin) -->
                     <Tab fx:id="usuariosTab" text="Usuarios">
-                        <VBox spacing="12">
-                            <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                        <VBox spacing="10" maxWidth="Infinity" maxHeight="Infinity">
+                            <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Button text="Atualizar" onAction="#handleRefreshUsers" styleClass="button-secondary"/>
+                                <Button text="↺" onAction="#handleRefreshUsers" styleClass="button-reload">
+                                    <tooltip><Tooltip text="Atualizar lista de usuários"/></tooltip>
+                                </Button>
                                 <Button fx:id="editUserButton" text="Editar nome" onAction="#handleEditUser"
                                         disable="true" styleClass="button-secondary"/>
-                                <Button fx:id="deleteUserAdminButton" text="Deletar usuário" onAction="#handleDeleteUserAdmin"
+                                <Button fx:id="deleteUserAdminButton" text="Deletar" onAction="#handleDeleteUserAdmin"
                                         disable="true" styleClass="button-danger"/>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <Button text="+ Criar usuário" onAction="#handleCreateUser" styleClass="button-primary"/>
                             </HBox>
 
-                            <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" minHeight="200">
+                            <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
                                 <columns>
-                                    <TableColumn fx:id="userUsernameCol" text="Usuário" prefWidth="140"/>
-                                    <TableColumn fx:id="userNameCol" text="Nome" prefWidth="180"/>
-                                    <TableColumn fx:id="userRoleCol" text="Papel" prefWidth="90"/>
+                                    <TableColumn fx:id="userUsernameCol" text="Usuário" prefWidth="160"/>
+                                    <TableColumn fx:id="userNameCol"     text="Nome"    prefWidth="220"/>
+                                    <TableColumn fx:id="userRoleCol"     text="Papel"   prefWidth="100"/>
                                 </columns>
                             </TableView>
                         </VBox>

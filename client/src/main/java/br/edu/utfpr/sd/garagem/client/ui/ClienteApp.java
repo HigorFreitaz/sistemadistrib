@@ -17,8 +17,10 @@ import java.io.IOException;
  */
 public final class ClienteApp extends Application {
 
-    private static final double WIDTH = 480;
-    private static final double HEIGHT = 560;
+    private static final double LOGIN_WIDTH  = 480;
+    private static final double LOGIN_HEIGHT = 560;
+    private static final double MAIN_WIDTH   = 960;
+    private static final double MAIN_HEIGHT  = 660;
 
     public static void main(String[] args) {
         launch(args);
@@ -30,8 +32,8 @@ public final class ClienteApp extends Application {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("SD Garagem - Cliente");
-        primaryStage.setMinWidth(WIDTH);
-        primaryStage.setMinHeight(HEIGHT);
+        primaryStage.setMinWidth(LOGIN_WIDTH);
+        primaryStage.setMinHeight(LOGIN_HEIGHT);
         showLogin();
         primaryStage.show();
     }
@@ -85,7 +87,9 @@ public final class ClienteApp extends Application {
             Parent root = loader.load();
             MainController controller = loader.getController();
             controller.init(this, host, port, username, token);
-            setScene(root);
+            setScene(root, MAIN_WIDTH, MAIN_HEIGHT);
+            primaryStage.setMinWidth(600);
+            primaryStage.setMinHeight(480);
         } catch (IOException e) {
             throw new IllegalStateException("nao foi possivel carregar a tela principal", e);
         }
@@ -105,7 +109,13 @@ public final class ClienteApp extends Application {
     }
 
     private void setScene(Parent root) {
-        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        setScene(root, LOGIN_WIDTH, LOGIN_HEIGHT);
+        primaryStage.setMinWidth(LOGIN_WIDTH);
+        primaryStage.setMinHeight(LOGIN_HEIGHT);
+    }
+
+    private void setScene(Parent root, double w, double h) {
+        Scene scene = new Scene(root, w, h);
         URL cssUrl = getClass().getResource("/css/app.css");
         if (cssUrl != null) scene.getStylesheets().add(cssUrl.toExternalForm());
         primaryStage.setScene(scene);
