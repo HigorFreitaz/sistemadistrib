@@ -168,7 +168,11 @@ public final class RequestDispatcher {
         }
         Optional<User> requestor = authService.resolveUser(request.getToken());
         if (requestor.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
-        // qualquer usuário autenticado pode consultar qualquer outro usuário
+        // usuário comum só pode consultar o próprio perfil
+        if (requestor.get().getRole() != UserRole.ADMIN
+                && !requestor.get().getUsername().equals(request.getUsername())) {
+            return Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
+        }
         Optional<User> user = authService.getUserData(request.getUsername());
         if (user.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
         return Response.ok("Usuário encontrado com sucesso",
@@ -324,8 +328,9 @@ public final class RequestDispatcher {
             return Response.ok("Vaga atualizada com sucesso", null);
         }
 
-        // usuário liberando — status disponivel, vaga estava ocupada
-        if (!isAdmin && "disponivel".equals(newStatus) && "ocupada".equals(vaga.getStatus())) {
+        // usuário liberando — status disponivel (ou omitido), vaga estava ocupada
+        if (!isAdmin && "ocupada".equals(vaga.getStatus())
+                && ("disponivel".equals(newStatus) || newStatus == null)) {
             String currentPlate = vaga.getLicensePlate();
             if (currentPlate != null) {
                 Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(currentPlate);
@@ -426,8 +431,8 @@ public final class RequestDispatcher {
         if (user.get().getRole() == UserRole.ADMIN) {
             return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
-        // brand obrigatório
-        if (request.getBrand() == null || request.getBrand().isBlank()) {
+        // brand vazia explicitamente → 400 (null = manter a existente)
+        if (request.getBrand() != null && request.getBrand().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         }
         Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(request.getLicensePlate());
@@ -436,14 +441,14 @@ public final class RequestDispatcher {
         if (!user.get().getUsername().equals(veiculo.getOwnerUsername())) {
             return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
-        // não pode alterar veículo estacionado
+        // não pode alterar veículo estacionado — verificado ANTES da validação de campos
         boolean estaEstacionado = vagaRepository.findAll().stream()
                 .anyMatch(v -> veiculo.getLicensePlate().equals(v.getLicensePlate()));
         if (estaEstacionado) {
             return Response.error(StatusCode.CONFLICT, "Veículo está estacionado em uma vaga.");
         }
-        veiculo.setBrand(request.getBrand());
-        veiculo.setModel(request.getModel()); // null = limpar modelo (opcional)
+        if (request.getBrand() != null) veiculo.setBrand(request.getBrand());
+        veiculo.setModel(request.getModel()); // null = limpar modelo (campo opcional)
         if (request.getType() != null) veiculo.setType(request.getType());
         vehicleRepository.update(veiculo);
         return Response.ok("Veículo atualizado com sucesso", null);
@@ -472,10 +477,22 @@ public final class RequestDispatcher {
 
     private Response handleFindVehicle(JsonObject envelope) {
         FindVehicleRequest request = JsonSupport.GSON.fromJson(envelope, FindVehicleRequest.class);
-        Response authCheck = verificarToken(request.getToken());
-        if (authCheck != null) return authCheck;
+        Optional<User> caller = authService.resolveUser(request.getToken());
+        if (caller.isEmpty()) {
+            if (request.getToken() == null || request.getToken().isBlank())
+                return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        }
         if (request.getLicensePlate() == null || request.getLicensePlate().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "Placa não fornecida.");
+        }
+        // usuário comum só pode localizar o próprio veículo
+        if (caller.get().getRole() != UserRole.ADMIN) {
+            Optional<Veiculo> veiculoCaller = vehicleRepository.findByLicensePlate(request.getLicensePlate());
+            if (veiculoCaller.isEmpty()
+                    || !veiculoCaller.get().getOwnerUsername().equals(caller.get().getUsername())) {
+                return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado em nenhuma vaga.");
+            }
         }
         Optional<Vaga> vaga = vagaRepository.findAll().stream()
                 .filter(v -> request.getLicensePlate().equals(v.getLicensePlate()))
