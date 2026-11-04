@@ -35,18 +35,25 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.GridPane;
 import javafx.util.Duration;
 
 import java.util.Arrays;
@@ -103,6 +110,9 @@ public final class MainController {
     @FXML private TableColumn<UserData, String> userRoleCol;
     @FXML private Button editUserButton;
     @FXML private Button deleteUserAdminButton;
+    @FXML private TextField userSearchField;
+
+    private final ObservableList<UserData> allUsers = FXCollections.observableArrayList();
 
     private ClienteApp app;
     private String host;
@@ -145,6 +155,17 @@ public final class MainController {
                     editUserButton.setDisable(u == null);
                     deleteUserAdminButton.setDisable(u == null);
                 });
+
+        FilteredList<UserData> filteredUsers = new FilteredList<>(allUsers, p -> true);
+        userSearchField.textProperty().addListener((obs, old, text) ->
+            filteredUsers.setPredicate(u -> {
+                if (text == null || text.isBlank()) return true;
+                String lower = text.toLowerCase();
+                return (u.getUsername() != null && u.getUsername().toLowerCase().contains(lower))
+                    || (u.getName() != null && u.getName().toLowerCase().contains(lower));
+            })
+        );
+        usersTable.setItems(filteredUsers);
     }
 
     private void setupTables() {
@@ -165,6 +186,10 @@ public final class MainController {
             UserRole r = c.getValue().getRole();
             return new SimpleStringProperty(r == UserRole.ADMIN ? "admin" : "user");
         });
+
+        vagasTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        vehiclesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        usersTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
     }
 
     private void loadUserProfile() {
@@ -401,6 +426,10 @@ public final class MainController {
     private void handleDeleteVaga() {
         VagaData selected = vagasTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
+        if ("ocupada".equals(selected.getStatus())) {
+            showError("A vaga '" + selected.getSpotName() + "' está ocupada. Libere-a antes de remover.");
+            return;
+        }
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 "Remover a vaga '" + selected.getSpotName() + "'?", ButtonType.YES, ButtonType.NO);
         confirm.setHeaderText(null);
@@ -632,7 +661,7 @@ public final class MainController {
                 try {
                     List<UserData> users = JsonSupport.GSON.fromJson(r.getData(),
                             new TypeToken<List<UserData>>() {}.getType());
-                    usersTable.setItems(FXCollections.observableArrayList(users != null ? users : List.of()));
+                    allUsers.setAll(users != null ? users : List.of());
                 } catch (JsonSyntaxException e) {
                     LOGGER.log(Level.WARNING, "resposta de getusers malformada", e);
                 }
@@ -646,29 +675,51 @@ public final class MainController {
 
     @FXML
     private void handleCreateUser() {
-        TextInputDialog nameDlg = new TextInputDialog();
-        nameDlg.setTitle("Criar usuário (admin)"); nameDlg.setHeaderText(null);
-        nameDlg.setContentText("Nome completo:");
-        Optional<String> name = nameDlg.showAndWait();
-        if (name.isEmpty() || name.get().isBlank()) return;
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Criar usuário");
+        dlg.setHeaderText(null);
 
-        TextInputDialog usernameDlg = new TextInputDialog();
-        usernameDlg.setTitle("Usuário"); usernameDlg.setHeaderText(null);
-        usernameDlg.setContentText("Username:");
-        Optional<String> newUsername = usernameDlg.showAndWait();
-        if (newUsername.isEmpty() || newUsername.get().isBlank()) return;
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(16, 16, 10, 16));
 
-        TextInputDialog pwDlg = new TextInputDialog();
-        pwDlg.setTitle("Senha"); pwDlg.setHeaderText(null);
-        pwDlg.setContentText("Senha:");
-        Optional<String> password = pwDlg.showAndWait();
-        if (password.isEmpty() || password.get().isBlank()) return;
+        TextField nameField = new TextField();
+        nameField.setPromptText("Nome completo");
+        nameField.setPrefWidth(220);
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("username");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Senha");
+        ComboBox<String> roleBox = new ComboBox<>();
+        roleBox.getItems().addAll("user", "admin");
+        roleBox.setValue("user");
+        roleBox.setPrefWidth(220);
 
-        ChoiceDialog<String> roleDlg = new ChoiceDialog<>("user", "user", "admin");
-        roleDlg.setTitle("Papel"); roleDlg.setHeaderText(null);
-        roleDlg.setContentText("Papel:");
-        Optional<String> roleStr = roleDlg.showAndWait();
-        if (roleStr.isEmpty()) return;
+        grid.add(new Label("Nome:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Username:"), 0, 1);
+        grid.add(usernameField, 1, 1);
+        grid.add(new Label("Senha:"), 0, 2);
+        grid.add(passwordField, 1, 2);
+        grid.add(new Label("Papel:"), 0, 3);
+        grid.add(roleBox, 1, 3);
+
+        dlg.getDialogPane().setContent(grid);
+        dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Optional<ButtonType> result = dlg.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        String name = nameField.getText().trim();
+        String newUsername = usernameField.getText().trim();
+        String password = passwordField.getText();
+        String roleStr = roleBox.getValue();
+
+        if (name.isBlank() || newUsername.isBlank() || password.isBlank()) {
+            showError("Preencha todos os campos obrigatórios.");
+            return;
+        }
 
         setLoading(true);
         Task<Response> task = new Task<>() {
@@ -676,8 +727,7 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new RegisterRequest(
-                            name.get().trim(), newUsername.get().trim(), password.get(), roleStr.get(), token));
+                    return connector.send(new RegisterRequest(name, newUsername, password, roleStr, token));
                 }
             }
         };
@@ -685,7 +735,8 @@ public final class MainController {
             setLoading(false);
             Response r = task.getValue();
             if (r.getStatusCode() == StatusCode.CREATED) {
-                statusLabel.setText("Usuário '" + newUsername.get().trim() + "' criado.");
+                handleRefreshUsers();
+                statusLabel.setText("Usuário '" + newUsername + "' criado.");
             } else {
                 showError(r.getMessage());
             }
@@ -696,14 +747,12 @@ public final class MainController {
 
     @FXML
     private void handleEditUser() {
-        TextInputDialog userDlg = new TextInputDialog();
-        userDlg.setTitle("Editar nome de usuário"); userDlg.setHeaderText(null);
-        userDlg.setContentText("Username do usuário a editar:");
-        Optional<String> targetUsername = userDlg.showAndWait();
-        if (targetUsername.isEmpty() || targetUsername.get().isBlank()) return;
+        UserData selected = usersTable.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
 
-        TextInputDialog nameDlg = new TextInputDialog();
-        nameDlg.setTitle("Novo nome"); nameDlg.setHeaderText(null);
+        TextInputDialog nameDlg = new TextInputDialog(selected.getName() != null ? selected.getName() : "");
+        nameDlg.setTitle("Editar nome");
+        nameDlg.setHeaderText("Usuário: " + selected.getUsername());
         nameDlg.setContentText("Novo nome:");
         Optional<String> newName = nameDlg.showAndWait();
         if (newName.isEmpty() || newName.get().isBlank()) return;
@@ -714,14 +763,14 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new UpdateUserNameRequest(token, targetUsername.get().trim(), newName.get().trim()));
+                    return connector.send(new UpdateUserNameRequest(token, selected.getUsername(), newName.get().trim()));
                 }
             }
         };
         task.setOnSucceeded(event -> {
             setLoading(false);
             Response r = task.getValue();
-            if (r.getStatusCode() == StatusCode.OK) statusLabel.setText("Nome atualizado.");
+            if (r.getStatusCode() == StatusCode.OK) { handleRefreshUsers(); statusLabel.setText("Nome atualizado."); }
             else showError(r.getMessage());
         });
         task.setOnFailed(event -> { setLoading(false); showError("Falha ao editar usuário."); });
@@ -730,14 +779,11 @@ public final class MainController {
 
     @FXML
     private void handleDeleteUserAdmin() {
-        TextInputDialog userDlg = new TextInputDialog();
-        userDlg.setTitle("Deletar usuário"); userDlg.setHeaderText(null);
-        userDlg.setContentText("Username do usuário a deletar:");
-        Optional<String> targetUsername = userDlg.showAndWait();
-        if (targetUsername.isEmpty() || targetUsername.get().isBlank()) return;
+        UserData selected = usersTable.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                "Deletar o usuário '" + targetUsername.get().trim() + "' permanentemente?",
+                "Deletar o usuário '" + selected.getUsername() + "' permanentemente?",
                 ButtonType.YES, ButtonType.NO);
         confirm.setHeaderText(null);
         if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
@@ -748,14 +794,14 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new DeleteUserRequest(token, targetUsername.get().trim()));
+                    return connector.send(new DeleteUserRequest(token, selected.getUsername()));
                 }
             }
         };
         task.setOnSucceeded(event -> {
             setLoading(false);
             Response r = task.getValue();
-            if (r.getStatusCode() == StatusCode.OK) statusLabel.setText("Usuário deletado.");
+            if (r.getStatusCode() == StatusCode.OK) { handleRefreshUsers(); statusLabel.setText("Usuário deletado."); }
             else showError(r.getMessage());
         });
         task.setOnFailed(event -> { setLoading(false); showError("Falha ao deletar usuário."); });

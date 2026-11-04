@@ -413,15 +413,15 @@
     -fx-background-color: #FAFBFD;
 }
 .table-view .table-row-cell:selected {
-    -fx-background-color: #EAF0FF;
+    -fx-background-color: #3A6FF7;
     -fx-background-insets: 0;
 }
 .table-view .table-row-cell:hover {
-    -fx-background-color: #F0F4FF;
+    -fx-background-color: #EAF0FF;
     -fx-background-insets: 0;
 }
 .table-view .table-row-cell:selected .table-cell {
-    -fx-text-fill: #21283B;
+    -fx-text-fill: white;
 }
 .table-view .table-cell {
     -fx-text-fill: #3A445C;

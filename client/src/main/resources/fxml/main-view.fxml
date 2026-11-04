@@ -144,6 +144,9 @@
                                 <Button text="+ Criar usuário" onAction="#handleCreateUser" styleClass="button-primary"/>
                             </HBox>
 
+                            <TextField fx:id="userSearchField" promptText="Buscar por nome ou username..."
+                                       maxWidth="Infinity"/>
+
                             <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
                                 <columns>
                                     <TableColumn fx:id="userUsernameCol" text="Usuário" prefWidth="160"/>
