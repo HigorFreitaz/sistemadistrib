@@ -171,7 +171,7 @@ public final class RequestDispatcher {
         // usuário comum só pode consultar o próprio perfil
         if (requestor.get().getRole() != UserRole.ADMIN
                 && !requestor.get().getUsername().equals(request.getUsername())) {
-            return Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
+            return Response.error(StatusCode.UNAUTHORIZED, "Operação não autorizada.");
         }
         Optional<User> user = authService.getUserData(request.getUsername());
         if (user.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
@@ -431,8 +431,11 @@ public final class RequestDispatcher {
         if (user.get().getRole() == UserRole.ADMIN) {
             return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         }
-        // brand vazia explicitamente → 400 (null = manter a existente)
-        if (request.getBrand() != null && request.getBrand().isBlank()) {
+        // Verifica se brand foi enviada explicitamente no JSON (null explícito vs campo ausente)
+        JsonObject dataNode = envelope.has("data") ? envelope.getAsJsonObject("data") : envelope;
+        boolean brandEnviada = dataNode != null && dataNode.has("brand");
+        // brand enviada como null ou vazia → 400 (campo obrigatório, não pode ser removido)
+        if (brandEnviada && (request.getBrand() == null || request.getBrand().isBlank())) {
             return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         }
         Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(request.getLicensePlate());
@@ -447,7 +450,7 @@ public final class RequestDispatcher {
         if (estaEstacionado) {
             return Response.error(StatusCode.CONFLICT, "Veículo está estacionado em uma vaga.");
         }
-        if (request.getBrand() != null) veiculo.setBrand(request.getBrand());
+        if (brandEnviada && request.getBrand() != null) veiculo.setBrand(request.getBrand());
         veiculo.setModel(request.getModel()); // null = limpar modelo (campo opcional)
         if (request.getType() != null) veiculo.setType(request.getType());
         vehicleRepository.update(veiculo);
