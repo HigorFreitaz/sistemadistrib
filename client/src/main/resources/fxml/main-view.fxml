@@ -64,11 +64,9 @@
                             <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Button fx:id="refreshVagasButton" text="↺" onAction="#handleRefreshVagas"
-                                        styleClass="button-reload">
-                                    <tooltip><Tooltip text="Atualizar lista de vagas"/></tooltip>
-                                </Button>
                                 <Region HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="createVagaButton" text="+ Nova vaga" onAction="#handleCreateVaga"
+                                        styleClass="button-primary" managed="false" visible="false"/>
                                 <Button fx:id="updateVagaButton" onAction="#handleUpdateVaga"
                                         disable="true" styleClass="button-icon-edit"
                                         managed="false" visible="false" contentDisplay="GRAPHIC_ONLY">
@@ -81,8 +79,10 @@
                                     <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
                                     <tooltip><Tooltip text="Remover vaga selecionada"/></tooltip>
                                 </Button>
-                                <Button fx:id="createVagaButton" text="+ Nova vaga" onAction="#handleCreateVaga"
-                                        styleClass="button-primary" managed="false" visible="false"/>
+                                <Button fx:id="refreshVagasButton" text="↺" onAction="#handleRefreshVagas"
+                                        styleClass="button-reload">
+                                    <tooltip><Tooltip text="Atualizar lista de vagas"/></tooltip>
+                                </Button>
                             </HBox>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
@@ -110,11 +110,9 @@
                             <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Button fx:id="refreshVehiclesButton" text="↺" onAction="#handleRefreshVehicles"
-                                        styleClass="button-reload">
-                                    <tooltip><Tooltip text="Atualizar lista de veículos"/></tooltip>
-                                </Button>
                                 <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
+                                        styleClass="button-primary"/>
                                 <Button fx:id="editVehicleButton" onAction="#handleEditVehicle"
                                         disable="true" styleClass="button-icon-edit" contentDisplay="GRAPHIC_ONLY">
                                     <graphic><SVGPath fill="#55607A" content="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></graphic>
@@ -125,8 +123,10 @@
                                     <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
                                     <tooltip><Tooltip text="Remover veículo selecionado"/></tooltip>
                                 </Button>
-                                <Button text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
-                                        styleClass="button-primary"/>
+                                <Button fx:id="refreshVehiclesButton" text="↺" onAction="#handleRefreshVehicles"
+                                        styleClass="button-reload">
+                                    <tooltip><Tooltip text="Atualizar lista de veículos"/></tooltip>
+                                </Button>
                             </HBox>
 
                             <TableView fx:id="vehiclesTable" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
@@ -146,10 +146,8 @@
                             <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <Button text="↺" onAction="#handleRefreshUsers" styleClass="button-reload">
-                                    <tooltip><Tooltip text="Atualizar lista de usuários"/></tooltip>
-                                </Button>
                                 <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="+ Criar usuário" onAction="#handleCreateUser" styleClass="button-primary"/>
                                 <Button fx:id="editUserButton" onAction="#handleEditUser"
                                         disable="true" styleClass="button-icon-edit" contentDisplay="GRAPHIC_ONLY">
                                     <graphic><SVGPath fill="#55607A" content="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></graphic>
@@ -160,7 +158,9 @@
                                     <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
                                     <tooltip><Tooltip text="Deletar usuário selecionado"/></tooltip>
                                 </Button>
-                                <Button text="+ Criar usuário" onAction="#handleCreateUser" styleClass="button-primary"/>
+                                <Button text="↺" onAction="#handleRefreshUsers" styleClass="button-reload">
+                                    <tooltip><Tooltip text="Atualizar lista de usuários"/></tooltip>
+                                </Button>
                             </HBox>
 
                             <TextField fx:id="userSearchField" promptText="Buscar por nome ou username..."
