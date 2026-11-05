@@ -146,7 +146,7 @@ public final class RequestDispatcher {
             Optional<User> requestor = authService.resolveUser(request.getToken());
             if (requestor.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
             if (requestor.get().getRole() != UserRole.ADMIN) {
-                return Response.error(StatusCode.FORBIDDEN, "Apenas administradores podem criar usuários com papel.");
+                return Response.error(StatusCode.UNAUTHORIZED, "Apenas administradores podem criar usuários com papel.");
             }
             UserRole role = "admin".equals(request.getRole()) ? UserRole.ADMIN : UserRole.USER;
             boolean created = authService.registerWithRole(request.getName(), request.getUsername(), request.getPassword(), role);
@@ -347,6 +347,15 @@ public final class RequestDispatcher {
         // demais operações — apenas admin
         if (!isAdmin) return Response.error(StatusCode.UNAUTHORIZED, "Apenas administradores podem realizar esta operação.");
 
+        // floor só pode ser alterado quando a vaga não está ocupada
+        if (request.getFloor() != null && "ocupada".equals(vaga.getStatus())) {
+            return Response.error(StatusCode.CONFLICT, "Não é possível alterar o andar de uma vaga ocupada.");
+        }
+        // fora_de_servico só pode ser definido a partir de disponivel
+        if ("fora_de_servico".equals(newStatus) && !"disponivel".equals(vaga.getStatus())) {
+            return Response.error(StatusCode.CONFLICT, "A vaga precisa estar disponível para ir a fora de serviço.");
+        }
+
         if (newStatus != null) vaga.setStatus(newStatus);
         if (newPlate != null) vaga.setLicensePlate(newPlate.isBlank() ? null : newPlate);
         if (request.getFloor() != null) vaga.setFloor(request.getFloor());
@@ -361,7 +370,7 @@ public final class RequestDispatcher {
         Optional<Vaga> vagaOpt = vagaRepository.findBySpotName(request.getSpotName());
         if (vagaOpt.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
         if ("ocupada".equals(vagaOpt.get().getStatus())) {
-            return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
+            return Response.error(StatusCode.CONFLICT, "Vaga ocupada não pode ser removida.");
         }
         vagaRepository.deleteBySpotName(request.getSpotName());
         return Response.ok("Vaga removida com sucesso", null);
@@ -444,15 +453,23 @@ public final class RequestDispatcher {
         if (!user.get().getUsername().equals(veiculo.getOwnerUsername())) {
             return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
-        // não pode alterar veículo estacionado — verificado ANTES da validação de campos
-        boolean estaEstacionado = vagaRepository.findAll().stream()
-                .anyMatch(v -> veiculo.getLicensePlate().equals(v.getLicensePlate()));
-        if (estaEstacionado) {
-            return Response.error(StatusCode.CONFLICT, "Veículo está estacionado em uma vaga.");
+        // Verifica se type foi enviado explicitamente no JSON
+        boolean typeEnviado = dataNode != null && dataNode.has("type");
+        // type enviado como null ou valor inválido → 400
+        if (typeEnviado && (request.getType() == null || !TIPOS_VALIDOS.contains(request.getType()))) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+        // Apenas mudança de type é bloqueada quando estacionado; brand/model são sempre permitidos
+        if (typeEnviado) {
+            boolean estaEstacionado = vagaRepository.findAll().stream()
+                    .anyMatch(v -> veiculo.getLicensePlate().equals(v.getLicensePlate()));
+            if (estaEstacionado) {
+                return Response.error(StatusCode.CONFLICT, "Veículo associado a uma vaga. Libere a vaga antes desta operação.");
+            }
         }
         if (brandEnviada && request.getBrand() != null) veiculo.setBrand(request.getBrand());
         veiculo.setModel(request.getModel()); // null = limpar modelo (campo opcional)
-        if (request.getType() != null) veiculo.setType(request.getType());
+        if (typeEnviado) veiculo.setType(request.getType());
         vehicleRepository.update(veiculo);
         return Response.ok("Veículo atualizado com sucesso", null);
     }
@@ -472,7 +489,7 @@ public final class RequestDispatcher {
         boolean estaEstacionado = vagaRepository.findAll().stream()
                 .anyMatch(v -> request.getLicensePlate().equals(v.getLicensePlate()));
         if (estaEstacionado) {
-            return Response.error(StatusCode.CONFLICT, "Veículo está estacionado em uma vaga.");
+            return Response.error(StatusCode.CONFLICT, "Veículo associado a uma vaga. Libere a vaga antes desta operação.");
         }
         vehicleRepository.deleteByLicensePlate(request.getLicensePlate());
         return Response.ok("Veículo removido com sucesso", null);
