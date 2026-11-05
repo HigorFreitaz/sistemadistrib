@@ -64,18 +64,25 @@
                             <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
-                                <!-- ícone de reload -->
                                 <Button fx:id="refreshVagasButton" text="↺" onAction="#handleRefreshVagas"
                                         styleClass="button-reload">
                                     <tooltip><Tooltip text="Atualizar lista de vagas"/></tooltip>
                                 </Button>
-                                <Button fx:id="updateVagaButton" text="Editar selecionada" onAction="#handleUpdateVaga"
-                                        disable="true" styleClass="button-secondary" managed="false" visible="false"/>
                                 <Region HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="updateVagaButton" onAction="#handleUpdateVaga"
+                                        disable="true" styleClass="button-icon-edit"
+                                        managed="false" visible="false" contentDisplay="GRAPHIC_ONLY">
+                                    <graphic><SVGPath fill="#55607A" content="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></graphic>
+                                    <tooltip><Tooltip text="Editar vaga selecionada"/></tooltip>
+                                </Button>
+                                <Button fx:id="deleteVagaButton" onAction="#handleDeleteVaga"
+                                        disable="true" styleClass="button-icon-delete"
+                                        managed="false" visible="false" contentDisplay="GRAPHIC_ONLY">
+                                    <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
+                                    <tooltip><Tooltip text="Remover vaga selecionada"/></tooltip>
+                                </Button>
                                 <Button fx:id="createVagaButton" text="+ Nova vaga" onAction="#handleCreateVaga"
                                         styleClass="button-primary" managed="false" visible="false"/>
-                                <Button fx:id="deleteVagaButton" text="Remover" onAction="#handleDeleteVaga"
-                                        disable="true" styleClass="button-danger" managed="false" visible="false"/>
                             </HBox>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
@@ -107,11 +114,17 @@
                                         styleClass="button-reload">
                                     <tooltip><Tooltip text="Atualizar lista de veículos"/></tooltip>
                                 </Button>
-                                <Button fx:id="editVehicleButton" text="Editar selecionado" onAction="#handleEditVehicle"
-                                        disable="true" styleClass="button-secondary"/>
-                                <Button fx:id="deleteVehicleButton" text="Remover" onAction="#handleDeleteVehicle"
-                                        disable="true" styleClass="button-danger"/>
                                 <Region HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="editVehicleButton" onAction="#handleEditVehicle"
+                                        disable="true" styleClass="button-icon-edit" contentDisplay="GRAPHIC_ONLY">
+                                    <graphic><SVGPath fill="#55607A" content="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></graphic>
+                                    <tooltip><Tooltip text="Editar veículo selecionado"/></tooltip>
+                                </Button>
+                                <Button fx:id="deleteVehicleButton" onAction="#handleDeleteVehicle"
+                                        disable="true" styleClass="button-icon-delete" contentDisplay="GRAPHIC_ONLY">
+                                    <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
+                                    <tooltip><Tooltip text="Remover veículo selecionado"/></tooltip>
+                                </Button>
                                 <Button text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
                                         styleClass="button-primary"/>
                             </HBox>
@@ -136,11 +149,17 @@
                                 <Button text="↺" onAction="#handleRefreshUsers" styleClass="button-reload">
                                     <tooltip><Tooltip text="Atualizar lista de usuários"/></tooltip>
                                 </Button>
-                                <Button fx:id="editUserButton" text="Editar nome" onAction="#handleEditUser"
-                                        disable="true" styleClass="button-secondary"/>
-                                <Button fx:id="deleteUserAdminButton" text="Deletar" onAction="#handleDeleteUserAdmin"
-                                        disable="true" styleClass="button-danger"/>
                                 <Region HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="editUserButton" onAction="#handleEditUser"
+                                        disable="true" styleClass="button-icon-edit" contentDisplay="GRAPHIC_ONLY">
+                                    <graphic><SVGPath fill="#55607A" content="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></graphic>
+                                    <tooltip><Tooltip text="Editar nome do usuário selecionado"/></tooltip>
+                                </Button>
+                                <Button fx:id="deleteUserAdminButton" onAction="#handleDeleteUserAdmin"
+                                        disable="true" styleClass="button-icon-delete" contentDisplay="GRAPHIC_ONLY">
+                                    <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
+                                    <tooltip><Tooltip text="Deletar usuário selecionado"/></tooltip>
+                                </Button>
                                 <Button text="+ Criar usuário" onAction="#handleCreateUser" styleClass="button-primary"/>
                             </HBox>
 

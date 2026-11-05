@@ -201,6 +201,42 @@
 .button-reload:hover { -fx-background-color: #EEF1F6; -fx-border-color: #3A6FF7; -fx-text-fill: #3A6FF7; }
 .button-reload:armed { -fx-background-color: #DDE7FF; }
 
+.button-icon-edit {
+    -fx-background-color: transparent;
+    -fx-border-color: #C7D0DE;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-max-width: 36;
+    -fx-max-height: 36;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+.button-icon-edit:hover { -fx-background-color: #EEF1F6; -fx-border-color: #3A6FF7; }
+.button-icon-edit:armed { -fx-background-color: #DDE7FF; }
+.button-icon-edit:disabled { -fx-opacity: 0.35; }
+
+.button-icon-delete {
+    -fx-background-color: transparent;
+    -fx-border-color: #E3B3B3;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-max-width: 36;
+    -fx-max-height: 36;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+.button-icon-delete:hover { -fx-background-color: #FBE4E4; -fx-border-color: #C23B3B; }
+.button-icon-delete:armed { -fx-background-color: #F5CBCB; }
+.button-icon-delete:disabled { -fx-opacity: 0.35; }
+
 /* ---- indicador de status (pill) ---- */
 .status-pill-online {
     -fx-background-color: #DFF5E7;
