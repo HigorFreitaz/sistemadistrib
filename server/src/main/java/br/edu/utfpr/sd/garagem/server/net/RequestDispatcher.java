@@ -364,7 +364,12 @@ public final class RequestDispatcher {
         }
 
         if (newStatus != null) vaga.setStatus(newStatus);
-        if (newPlate != null) vaga.setLicensePlate(newPlate.isBlank() ? null : newPlate);
+        // ao liberar uma vaga, a placa e sempre removida independente do que foi enviado
+        if ("disponivel".equals(vaga.getStatus())) {
+            vaga.setLicensePlate(null);
+        } else if (newPlate != null) {
+            vaga.setLicensePlate(newPlate.isBlank() ? null : newPlate);
+        }
         if (request.getFloor() != null) vaga.setFloor(request.getFloor());
         vagaRepository.update(vaga);
         return Response.ok("Vaga atualizada com sucesso", null);
