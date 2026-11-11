@@ -674,6 +674,46 @@ public final class MainController {
     }
 
     @FXML
+    private void handleSearchUser() {
+        String query = userSearchField.getText();
+        if (query == null || query.isBlank()) return;
+        String targetUsername = query.trim();
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new GetUserRequest(token, targetUsername));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setLoading(false);
+            Response r = task.getValue();
+            if (r.getStatusCode() == StatusCode.OK) {
+                try {
+                    UserData found = JsonSupport.GSON.fromJson(r.getData(), UserData.class);
+                    if (found != null) {
+                        allUsers.setAll(found);
+                        statusLabel.setText("Usuário '" + targetUsername + "' encontrado.");
+                    }
+                } catch (JsonSyntaxException e) {
+                    LOGGER.log(Level.WARNING, "resposta de getuser malformada", e);
+                }
+            } else if (r.getStatusCode() == StatusCode.NOT_FOUND) {
+                statusLabel.setText("Usuário '" + targetUsername + "' não encontrado.");
+            } else if (r.getStatusCode() == StatusCode.UNAUTHORIZED) {
+                app.showLogin();
+            } else {
+                showError(r.getMessage());
+            }
+        });
+        task.setOnFailed(event -> { setLoading(false); logWarning("falha ao buscar usuário", task.getException()); });
+        TaskRunner.runInBackground(task, "main-search-user-task");
+    }
+
+    @FXML
     private void handleCreateUser() {
         Dialog<ButtonType> dlg = new Dialog<>();
         dlg.setTitle("Criar usuário");

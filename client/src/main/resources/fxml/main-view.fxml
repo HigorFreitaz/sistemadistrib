@@ -163,8 +163,13 @@
                                 </Button>
                             </HBox>
 
-                            <TextField fx:id="userSearchField" promptText="Buscar por nome ou username..."
-                                       maxWidth="Infinity"/>
+                            <HBox spacing="8" alignment="CENTER_LEFT">
+                                <TextField fx:id="userSearchField"
+                                           promptText="Buscar usuário por username exato (Enter ou Buscar)..."
+                                           onAction="#handleSearchUser"
+                                           HBox.hgrow="ALWAYS"/>
+                                <Button text="Buscar" onAction="#handleSearchUser" styleClass="button-secondary"/>
+                            </HBox>
 
                             <TableView fx:id="usersTable" VBox.vgrow="ALWAYS" maxWidth="Infinity" maxHeight="Infinity">
                                 <columns>
