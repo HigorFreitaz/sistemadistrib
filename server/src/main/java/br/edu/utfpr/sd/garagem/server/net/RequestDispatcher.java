@@ -559,7 +559,7 @@ public final class RequestDispatcher {
             Optional<Veiculo> veiculoCaller = vehicleRepository.findByLicensePlate(request.getLicensePlate());
             if (veiculoCaller.isEmpty()
                     || !veiculoCaller.get().getOwnerUsername().equals(caller.get().getUsername())) {
-                return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado em nenhuma vaga.");
+                return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
             }
         }
         Optional<Vaga> vaga = vagaRepository.findAll().stream()
@@ -569,7 +569,7 @@ public final class RequestDispatcher {
         Optional<Ticket> ticket = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
         String ticketId = ticket.map(Ticket::getTicketId).orElse(null);
         String entryTime = ticket.map(Ticket::getEntryTime).orElse(null);
-        return Response.ok("Veiculo localizado com sucesso",
+        return Response.ok("Veículo localizado com sucesso",
                 new FindVehicleData(vaga.get().getFloor(), vaga.get().getSpotName(),
                         vaga.get().getStatus(), ticketId, entryTime));
     }
@@ -608,11 +608,16 @@ public final class RequestDispatcher {
                             dispEletrico, dispCombustao);
                 })
                 .collect(Collectors.toList());
-        return Response.ok("Vagas obtidas com sucesso", result);
+        String availMsg = result.isEmpty() ? "Nenhuma vaga cadastrada." :
+                result.stream().allMatch(a -> a.getAvailableSpots() == 0)
+                        ? "Nenhuma vaga disponível no momento." : "Vagas obtidas com sucesso";
+        return Response.ok(availMsg, result);
     }
 
     private Response handleEnterVehicle(JsonObject envelope) {
         EnterVehicleRequest request = JsonSupport.GSON.fromJson(envelope, EnterVehicleRequest.class);
+        if (request.getToken() == null || request.getToken().isBlank())
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         Optional<User> userOpt = authService.resolveUser(request.getToken());
         if (userOpt.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (userOpt.get().getRole() == UserRole.ADMIN) {
@@ -658,6 +663,8 @@ public final class RequestDispatcher {
 
     private Response handleExitVehicle(JsonObject envelope) {
         ExitVehicleRequest request = JsonSupport.GSON.fromJson(envelope, ExitVehicleRequest.class);
+        if (request.getToken() == null || request.getToken().isBlank())
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         Optional<User> userOpt = authService.resolveUser(request.getToken());
         if (userOpt.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (request.getLicensePlate() == null || request.getLicensePlate().isBlank()) {
