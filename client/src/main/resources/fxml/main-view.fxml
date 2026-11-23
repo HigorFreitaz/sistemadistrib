@@ -86,6 +86,12 @@
                             </HBox>
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
+                                <Button fx:id="availabilityButton" text="Disponibilidade por andar"
+                                        onAction="#handleGetAvailability"
+                                        styleClass="button-secondary" managed="false" visible="false"/>
+                            </HBox>
+
+                            <HBox spacing="8" alignment="CENTER_LEFT">
                                 <Label text="Localizar placa:" styleClass="field-label"/>
                                 <TextField fx:id="findPlateField" promptText="Ex: ABC1234" prefWidth="140"/>
                                 <Button text="Buscar" onAction="#handleFindVehicle" styleClass="button-secondary"/>
@@ -122,6 +128,16 @@
                                         disable="true" styleClass="button-icon-delete" contentDisplay="GRAPHIC_ONLY">
                                     <graphic><SVGPath fill="#C23B3B" content="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></graphic>
                                     <tooltip><Tooltip text="Remover veículo selecionado"/></tooltip>
+                                </Button>
+                                <Button fx:id="estacionarButton" text="Estacionar" onAction="#handleEnterVehicle"
+                                        disable="true" styleClass="button-primary"
+                                        managed="false" visible="false">
+                                    <tooltip><Tooltip text="Estacionar veículo selecionado (auto-alocação)"/></tooltip>
+                                </Button>
+                                <Button fx:id="sairButton" text="Registrar Saída" onAction="#handleExitVehicle"
+                                        disable="true" styleClass="button-secondary"
+                                        managed="false" visible="false">
+                                    <tooltip><Tooltip text="Registrar saída do veículo selecionado"/></tooltip>
                                 </Button>
                                 <Button fx:id="refreshVehiclesButton" text="↺" onAction="#handleRefreshVehicles"
                                         styleClass="button-reload">

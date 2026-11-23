@@ -108,6 +108,11 @@ public final class AuthService {
         return sessionService.activeSessionCount();
     }
 
+    /** Lista de usernames logados, para exibição na GUI do servidor. */
+    public java.util.List<String> activeUsernames() {
+        return sessionService.activeUsernames();
+    }
+
     /** Derruba todas as sessões ativas de uma vez, a pedido do operador do servidor. */
     public void logoutAllSessions() {
         sessionService.logoutAll();

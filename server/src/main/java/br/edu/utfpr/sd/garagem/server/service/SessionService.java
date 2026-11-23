@@ -84,6 +84,11 @@ public final class SessionService {
         return sessionsByToken.size();
     }
 
+    /** Lista de usernames com sessão ativa, para exibição na GUI do servidor. */
+    public java.util.List<String> activeUsernames() {
+        return new java.util.ArrayList<>(tokenByUsername.keySet());
+    }
+
     /** Encerra a sessão do usuário pelo username (usado ao deletar uma conta). */
     public boolean logoutByUsername(String username) {
         synchronized (lock) {

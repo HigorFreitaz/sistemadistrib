@@ -20,6 +20,9 @@ public interface ServerEventListener {
     /** O número de sessões ativas mudou. */
     void onSessionCountChanged(int activeSessions);
 
+    /** A lista de usuários logados mudou. */
+    void onLoggedUsersChanged(java.util.List<String> usernames);
+
     /** Uma linha de log deve ser exibida (mensagens do protocolo ou eventos de conexão). */
     void onLog(String message);
 }

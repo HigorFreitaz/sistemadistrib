@@ -9,8 +9,14 @@ import br.edu.utfpr.sd.garagem.common.protocol.CreateVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.DeleteUserRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.DeleteVagaRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.DeleteVehicleRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.AvailabilityData;
+import br.edu.utfpr.sd.garagem.common.protocol.EnterVehicleData;
+import br.edu.utfpr.sd.garagem.common.protocol.EnterVehicleRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.ExitVehicleData;
+import br.edu.utfpr.sd.garagem.common.protocol.ExitVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleData;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.GetAvailabilityRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
@@ -101,6 +107,9 @@ public final class MainController {
     @FXML private TableColumn<VehicleData, String> vehiclePlateCol;
     @FXML private Button editVehicleButton;
     @FXML private Button deleteVehicleButton;
+    @FXML private Button estacionarButton;
+    @FXML private Button sairButton;
+    @FXML private Button availabilityButton;
 
     // usuários tab (admin)
     @FXML private Tab usuariosTab;
@@ -149,6 +158,8 @@ public final class MainController {
                 (obs, old, v) -> {
                     editVehicleButton.setDisable(v == null);
                     deleteVehicleButton.setDisable(v == null);
+                    estacionarButton.setDisable(v == null);
+                    sairButton.setDisable(v == null);
                 });
         usersTable.getSelectionModel().selectedItemProperty().addListener(
                 (obs, old, u) -> {
@@ -230,12 +241,10 @@ public final class MainController {
     }
 
     private void applyRoleUI() {
-        // botão de ação na vaga: visível para todos (texto diferente por papel)
-        updateVagaButton.setVisible(true);
-        updateVagaButton.setManaged(true);
-
         if (role == UserRole.ADMIN) {
             roleLabel.setText("Administrador");
+            updateVagaButton.setVisible(true);
+            updateVagaButton.setManaged(true);
             createVagaButton.setVisible(true);
             createVagaButton.setManaged(true);
             deleteVagaButton.setVisible(true);
@@ -243,7 +252,13 @@ public final class MainController {
             tabPane.getTabs().add(usuariosTab);
         } else {
             roleLabel.setText("Usuário");
-            updateVagaButton.setText("Estacionar / Liberar");
+            // EP-3: usuários usam entervehicle/exitvehicle
+            estacionarButton.setVisible(true);
+            estacionarButton.setManaged(true);
+            sairButton.setVisible(true);
+            sairButton.setManaged(true);
+            availabilityButton.setVisible(true);
+            availabilityButton.setManaged(true);
         }
     }
 
@@ -518,6 +533,135 @@ public final class MainController {
         });
         task.setOnFailed(event -> { setLoading(false); logWarning("falha ao carregar veículos", task.getException()); });
         TaskRunner.runInBackground(task, "main-get-vehicles-task");
+    }
+
+    @FXML
+    private void handleEnterVehicle() {
+        VehicleData selected = vehiclesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+        String plate = selected.getLicensePlate();
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new EnterVehicleRequest(token, plate));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setLoading(false);
+            Response r = task.getValue();
+            if (r.getStatusCode() == StatusCode.CREATED) {
+                try {
+                    EnterVehicleData data = JsonSupport.GSON.fromJson(r.getData(), EnterVehicleData.class);
+                    statusLabel.setText("Estacionado: vaga " + data.getSpotName()
+                            + " · andar " + data.getFloor()
+                            + " · ticket " + data.getTicketId());
+                    handleRefreshVagas();
+                } catch (JsonSyntaxException e) {
+                    statusLabel.setText("Veículo estacionado.");
+                    handleRefreshVagas();
+                }
+            } else {
+                showError(r.getMessage());
+            }
+        });
+        task.setOnFailed(event -> { setLoading(false); showError("Falha ao estacionar."); });
+        TaskRunner.runInBackground(task, "main-enter-vehicle-task");
+    }
+
+    @FXML
+    private void handleExitVehicle() {
+        VehicleData selected = vehiclesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+        String plate = selected.getLicensePlate();
+        TextInputDialog dlg = new TextInputDialog("0");
+        dlg.setTitle("Registrar saída");
+        dlg.setHeaderText("Placa: " + plate);
+        dlg.setContentText("Tempo de permanência (minutos):");
+        Optional<String> resp = dlg.showAndWait();
+        if (resp.isEmpty()) return;
+        int minutos;
+        try { minutos = Integer.parseInt(resp.get().trim()); }
+        catch (NumberFormatException e) { showError("Informe um número de minutos válido."); return; }
+        if (minutos < 0) { showError("Tempo não pode ser negativo."); return; }
+        final int min = minutos;
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new ExitVehicleRequest(token, plate, min));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setLoading(false);
+            Response r = task.getValue();
+            if (r.getStatusCode() == StatusCode.OK) {
+                try {
+                    ExitVehicleData data = JsonSupport.GSON.fromJson(r.getData(), ExitVehicleData.class);
+                    statusLabel.setText("Saída registrada: vaga " + data.getSpotName()
+                            + " · " + data.getDurationMinutes() + " min"
+                            + " · R$ " + String.format("%.2f", data.getAmount()));
+                    handleRefreshVagas();
+                } catch (JsonSyntaxException e) {
+                    statusLabel.setText("Saída registrada.");
+                    handleRefreshVagas();
+                }
+            } else {
+                showError(r.getMessage());
+            }
+        });
+        task.setOnFailed(event -> { setLoading(false); showError("Falha ao registrar saída."); });
+        TaskRunner.runInBackground(task, "main-exit-vehicle-task");
+    }
+
+    @FXML
+    private void handleGetAvailability() {
+        setLoading(true);
+        Task<Response> task = new Task<>() {
+            @Override
+            protected Response call() throws ConnectionException {
+                try (SocketConnector connector = new SocketConnector(host, port)) {
+                    connector.connect();
+                    return connector.send(new GetAvailabilityRequest(token));
+                }
+            }
+        };
+        task.setOnSucceeded(event -> {
+            setLoading(false);
+            Response r = task.getValue();
+            if (r.getStatusCode() == StatusCode.OK) {
+                try {
+                    List<AvailabilityData> list = JsonSupport.GSON.fromJson(r.getData(),
+                            new TypeToken<List<AvailabilityData>>() {}.getType());
+                    if (list == null || list.isEmpty()) {
+                        statusLabel.setText("Nenhuma vaga cadastrada.");
+                        return;
+                    }
+                    StringBuilder sb = new StringBuilder("Disponibilidade: ");
+                    for (AvailabilityData a : list) {
+                        sb.append("Andar ").append(a.getFloor())
+                                .append(": ").append(a.getAvailableSpots())
+                                .append("/").append(a.getTotalSpots())
+                                .append(" livres (comb=").append(a.getAvailableCombustao())
+                                .append(", elet=").append(a.getAvailableEletrico())
+                                .append(")  ");
+                    }
+                    statusLabel.setText(sb.toString());
+                } catch (JsonSyntaxException e) {
+                    statusLabel.setText("Resposta inválida.");
+                }
+            } else {
+                showError(r.getMessage());
+            }
+        });
+        task.setOnFailed(event -> { setLoading(false); showError("Falha ao buscar disponibilidade."); });
+        TaskRunner.runInBackground(task, "main-availability-task");
     }
 
     @FXML

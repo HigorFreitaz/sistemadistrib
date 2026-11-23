@@ -25,5 +25,12 @@ public final class Methods {
     public static final String DELETE_VEHICLE = "deletevehicle";
     public static final String FIND_VEHICLE = "findvehicle";
 
+    // EP-3
+    public static final String READ_USERS = "readusers";
+    public static final String READ_VEHICLES = "readvehicles";
+    public static final String GET_AVAILABILITY = "getavailability";
+    public static final String ENTER_VEHICLE = "entervehicle";
+    public static final String EXIT_VEHICLE = "exitvehicle";
+
     private Methods() {}
 }

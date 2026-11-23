@@ -5,10 +5,12 @@ import br.edu.utfpr.sd.garagem.server.net.GarageServer;
 import br.edu.utfpr.sd.garagem.server.net.RequestDispatcher;
 import br.edu.utfpr.sd.garagem.server.net.ServerEventListener;
 import br.edu.utfpr.sd.garagem.server.repository.JsonSessionRepository;
+import br.edu.utfpr.sd.garagem.server.repository.JsonTicketRepository;
 import br.edu.utfpr.sd.garagem.server.repository.JsonUserRepository;
 import br.edu.utfpr.sd.garagem.server.repository.JsonVagaRepository;
 import br.edu.utfpr.sd.garagem.server.repository.JsonVehicleRepository;
 import br.edu.utfpr.sd.garagem.server.repository.SessionRepository;
+import br.edu.utfpr.sd.garagem.server.repository.TicketRepository;
 import br.edu.utfpr.sd.garagem.server.repository.UserRepository;
 import br.edu.utfpr.sd.garagem.server.repository.VagaRepository;
 import br.edu.utfpr.sd.garagem.server.repository.VehicleRepository;
@@ -16,10 +18,12 @@ import br.edu.utfpr.sd.garagem.server.service.AuthService;
 import br.edu.utfpr.sd.garagem.server.service.SessionService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -27,6 +31,7 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,6 +49,7 @@ public final class ServerController implements ServerEventListener {
     private static final Path SESSIONS_FILE = Path.of("dados", "sessoes.json");
     private static final Path VAGAS_FILE = Path.of("dados", "vagas.json");
     private static final Path VEICULOS_FILE = Path.of("dados", "veiculos.json");
+    private static final Path TICKETS_FILE = Path.of("dados", "tickets.json");
     private static final Duration TOOLTIP_SHOW_DELAY = Duration.millis(150);
     private static final double TOOLTIP_VERTICAL_GAP = 8;
 
@@ -67,6 +73,8 @@ public final class ServerController implements ServerEventListener {
     private Label statusCodeHelpBadge;
     @FXML
     private Tooltip statusCodeTooltip;
+    @FXML
+    private ListView<String> loggedUsersList;
 
     private GarageServer server;
     private AuthService authService;
@@ -120,7 +128,9 @@ public final class ServerController implements ServerEventListener {
         authService = new AuthService(userRepository, new SessionService(sessionRepository));
         VagaRepository vagaRepository = new JsonVagaRepository(VAGAS_FILE);
         VehicleRepository vehicleRepository = new JsonVehicleRepository(VEICULOS_FILE);
-        RequestDispatcher dispatcher = new RequestDispatcher(authService, vagaRepository, vehicleRepository, this);
+        TicketRepository ticketRepository = new JsonTicketRepository(TICKETS_FILE);
+        RequestDispatcher dispatcher = new RequestDispatcher(authService, vagaRepository,
+                vehicleRepository, ticketRepository, this);
         server = new GarageServer(port, dispatcher, this);
         try {
             server.start();
@@ -141,7 +151,8 @@ public final class ServerController implements ServerEventListener {
             return;
         }
         authService.logoutAllSessions();
-        onSessionCountChanged(authService.activeSessionCount());
+        onSessionCountChanged(0);
+        onLoggedUsersChanged(java.util.List.of());
         appendLog("Todas as sessoes foram encerradas pelo operador do servidor.");
     }
 
@@ -150,6 +161,7 @@ public final class ServerController implements ServerEventListener {
         if (authService != null) {
             authService.logoutAllSessions();
             onSessionCountChanged(0);
+            onLoggedUsersChanged(java.util.List.of());
         }
         if (server != null) {
             server.stop();
@@ -194,6 +206,15 @@ public final class ServerController implements ServerEventListener {
     @Override
     public void onSessionCountChanged(int activeSessions) {
         Platform.runLater(() -> activeSessionsLabel.setText(String.valueOf(activeSessions)));
+    }
+
+    @Override
+    public void onLoggedUsersChanged(List<String> usernames) {
+        Platform.runLater(() -> {
+            if (loggedUsersList != null) {
+                loggedUsersList.setItems(FXCollections.observableArrayList(usernames));
+            }
+        });
     }
 
     @Override

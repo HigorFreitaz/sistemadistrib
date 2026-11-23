@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Tooltip?>
@@ -98,15 +99,21 @@
         </VBox>
     </top>
     <center>
-        <VBox spacing="8">
+        <HBox spacing="12">
             <padding>
                 <Insets top="16" right="24" bottom="16" left="24"/>
             </padding>
-            <HBox spacing="6" alignment="CENTER_LEFT">
-                <Label text="Log do protocolo" styleClass="section-title"/>
-                <Label fx:id="statusCodeHelpBadge" text="?" styleClass="help-badge"/>
-            </HBox>
-            <TextArea fx:id="logArea" editable="false" wrapText="true" styleClass="log-area" VBox.vgrow="ALWAYS"/>
-        </VBox>
+            <VBox spacing="8" HBox.hgrow="ALWAYS">
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <Label text="Log do protocolo" styleClass="section-title"/>
+                    <Label fx:id="statusCodeHelpBadge" text="?" styleClass="help-badge"/>
+                </HBox>
+                <TextArea fx:id="logArea" editable="false" wrapText="true" styleClass="log-area" VBox.vgrow="ALWAYS"/>
+            </VBox>
+            <VBox spacing="8" prefWidth="200">
+                <Label text="Usuarios logados" styleClass="section-title"/>
+                <ListView fx:id="loggedUsersList" VBox.vgrow="ALWAYS"/>
+            </VBox>
+        </HBox>
     </center>
 </BorderPane>

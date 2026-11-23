@@ -9,6 +9,7 @@ public interface VehicleRepository {
     boolean save(Veiculo veiculo);
     Optional<Veiculo> findByLicensePlate(String licensePlate);
     List<Veiculo> findByOwner(String ownerUsername);
+    List<Veiculo> findAll();
     boolean update(Veiculo veiculo);
     boolean deleteByLicensePlate(String licensePlate);
 }

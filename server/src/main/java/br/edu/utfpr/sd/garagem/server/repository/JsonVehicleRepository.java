@@ -57,6 +57,11 @@ public final class JsonVehicleRepository implements VehicleRepository {
     }
 
     @Override
+    public List<Veiculo> findAll() {
+        return new ArrayList<>(veiculosByPlate.values());
+    }
+
+    @Override
     public List<Veiculo> findByOwner(String ownerUsername) {
         return veiculosByPlate.values().stream()
                 .filter(v -> ownerUsername.equals(v.getOwnerUsername()))

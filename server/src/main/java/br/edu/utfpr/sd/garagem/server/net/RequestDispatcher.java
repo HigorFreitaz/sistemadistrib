@@ -6,13 +6,20 @@ import br.edu.utfpr.sd.garagem.common.model.User;
 import br.edu.utfpr.sd.garagem.common.model.UserRole;
 import br.edu.utfpr.sd.garagem.common.model.Vaga;
 import br.edu.utfpr.sd.garagem.common.model.Veiculo;
+import br.edu.utfpr.sd.garagem.common.model.Ticket;
+import br.edu.utfpr.sd.garagem.common.protocol.AvailabilityData;
 import br.edu.utfpr.sd.garagem.common.protocol.CreateVagaRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.CreateVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.DeleteUserRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.DeleteVagaRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.DeleteVehicleRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.EnterVehicleData;
+import br.edu.utfpr.sd.garagem.common.protocol.EnterVehicleRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.ExitVehicleData;
+import br.edu.utfpr.sd.garagem.common.protocol.ExitVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleData;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.GetAvailabilityRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
@@ -21,6 +28,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.GetVehiclesRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.LoginRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Methods;
+import br.edu.utfpr.sd.garagem.common.protocol.ReadVehiclesRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.RegisterRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
 import br.edu.utfpr.sd.garagem.common.protocol.StatusCode;
@@ -35,6 +43,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.VehicleData;
 import br.edu.utfpr.sd.garagem.common.validation.NameValidator;
 import br.edu.utfpr.sd.garagem.common.validation.PasswordValidator;
 import br.edu.utfpr.sd.garagem.common.validation.UsernameValidator;
+import br.edu.utfpr.sd.garagem.server.repository.TicketRepository;
 import br.edu.utfpr.sd.garagem.server.repository.VagaRepository;
 import br.edu.utfpr.sd.garagem.server.repository.VehicleRepository;
 import br.edu.utfpr.sd.garagem.server.service.AuthService;
@@ -44,25 +53,38 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class RequestDispatcher {
 
     private static final Set<String> TIPOS_VALIDOS = Set.of("combustao", "eletrico");
 
+    private static final DateTimeFormatter ISO_FMT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZoneOffset.UTC);
+
     private final AuthService authService;
     private final VagaRepository vagaRepository;
     private final VehicleRepository vehicleRepository;
+    private final TicketRepository ticketRepository;
     private final ServerEventListener listener;
 
     public RequestDispatcher(AuthService authService, VagaRepository vagaRepository,
-                             VehicleRepository vehicleRepository, ServerEventListener listener) {
+                             VehicleRepository vehicleRepository,
+                             TicketRepository ticketRepository,
+                             ServerEventListener listener) {
         this.authService = authService;
         this.vagaRepository = vagaRepository;
         this.vehicleRepository = vehicleRepository;
+        this.ticketRepository = ticketRepository;
         this.listener = listener;
     }
 
@@ -83,7 +105,7 @@ public final class RequestDispatcher {
             case Methods.LOGOUT -> handleLogout(envelope);
             case Methods.REGISTER -> handleRegister(envelope);
             case Methods.GET_USER -> handleGetUser(envelope);
-            case Methods.GET_USERS -> handleGetUsers(envelope);
+            case Methods.GET_USERS, Methods.READ_USERS -> handleGetUsers(envelope);
             case Methods.UPDATE_USER_NAME -> handleUpdateUserName(envelope);
             case Methods.UPDATE_USER_PASSWORD -> handleUpdateUserPassword(envelope);
             case Methods.DELETE_USER -> handleDeleteUser(envelope);
@@ -97,6 +119,10 @@ public final class RequestDispatcher {
             case Methods.UPDATE_VEHICLE -> handleUpdateVehicle(envelope);
             case Methods.DELETE_VEHICLE -> handleDeleteVehicle(envelope);
             case Methods.FIND_VEHICLE -> handleFindVehicle(envelope);
+            case Methods.READ_VEHICLES -> handleReadVehicles(envelope);
+            case Methods.GET_AVAILABILITY -> handleGetAvailability(envelope);
+            case Methods.ENTER_VEHICLE -> handleEnterVehicle(envelope);
+            case Methods.EXIT_VEHICLE -> handleExitVehicle(envelope);
             default -> Response.error(StatusCode.NOT_FOUND, "Operacao nao suportada");
         };
     }
@@ -116,7 +142,7 @@ public final class RequestDispatcher {
     }
 
     private Response onLoginSuccess(Session session) {
-        listener.onSessionCountChanged(authService.activeSessionCount());
+        notifySessionChange();
         return Response.ok("Sucesso no Login", new TokenData(session.getToken()));
     }
 
@@ -126,7 +152,7 @@ public final class RequestDispatcher {
             return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
         }
         boolean loggedOut = authService.logout(request.getToken());
-        listener.onSessionCountChanged(authService.activeSessionCount());
+        notifySessionChange();
         return loggedOut
                 ? Response.ok("Usuário deslogado com sucesso", null)
                 : Response.error(StatusCode.UNAUTHORIZED, "Sessão não encontrada ou já encerrada.");
@@ -245,7 +271,7 @@ public final class RequestDispatcher {
                 .forEach(v -> vehicleRepository.deleteByLicensePlate(v.getLicensePlate()));
         // remove usuário e invalida a sessão DELE
         boolean deleted = authService.deleteUser(request.getUsername());
-        listener.onSessionCountChanged(authService.activeSessionCount());
+        notifySessionChange();
         return deleted
                 ? Response.ok("Usuário deletado com sucesso", null)
                 : Response.error(StatusCode.NOT_FOUND, "Usuário não encontrado");
@@ -540,8 +566,165 @@ public final class RequestDispatcher {
                 .filter(v -> request.getLicensePlate().equals(v.getLicensePlate()))
                 .findFirst();
         if (vaga.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado em nenhuma vaga.");
+        Optional<Ticket> ticket = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
+        String ticketId = ticket.map(Ticket::getTicketId).orElse(null);
+        String entryTime = ticket.map(Ticket::getEntryTime).orElse(null);
         return Response.ok("Veiculo localizado com sucesso",
-                new FindVehicleData(vaga.get().getFloor(), vaga.get().getSpotName(), vaga.get().getStatus()));
+                new FindVehicleData(vaga.get().getFloor(), vaga.get().getSpotName(),
+                        vaga.get().getStatus(), ticketId, entryTime));
+    }
+
+    private Response handleReadVehicles(JsonObject envelope) {
+        ReadVehiclesRequest request = JsonSupport.GSON.fromJson(envelope, ReadVehiclesRequest.class);
+        Response adminCheck = verificarAdmin(request.getToken());
+        if (adminCheck != null) return adminCheck;
+        List<VehicleData> vehicles = vehicleRepository.findAll().stream()
+                .map(v -> new VehicleData(v.getBrand(), v.getModel(), v.getType(), v.getLicensePlate()))
+                .collect(Collectors.toList());
+        return Response.ok("Veículos obtidos com sucesso", vehicles);
+    }
+
+    private Response handleGetAvailability(JsonObject envelope) {
+        GetAvailabilityRequest request = JsonSupport.GSON.fromJson(envelope, GetAvailabilityRequest.class);
+        Response authCheck = verificarToken(request.getToken());
+        if (authCheck != null) return authCheck;
+        List<Vaga> todas = vagaRepository.findAll();
+        // agrupar por andar
+        Map<Integer, List<Vaga>> porAndar = todas.stream()
+                .collect(Collectors.groupingBy(Vaga::getFloor));
+        List<AvailabilityData> result = porAndar.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> {
+                    int floor = e.getKey();
+                    List<Vaga> vagas = e.getValue();
+                    int total = vagas.size();
+                    int dispEletrico = (int) vagas.stream()
+                            .filter(v -> "disponivel".equals(v.getStatus()) && "eletrico".equals(v.getType()))
+                            .count();
+                    int dispCombustao = (int) vagas.stream()
+                            .filter(v -> "disponivel".equals(v.getStatus()) && "combustao".equals(v.getType()))
+                            .count();
+                    return new AvailabilityData(floor, total, dispEletrico + dispCombustao,
+                            dispEletrico, dispCombustao);
+                })
+                .collect(Collectors.toList());
+        return Response.ok("Vagas obtidas com sucesso", result);
+    }
+
+    private Response handleEnterVehicle(JsonObject envelope) {
+        EnterVehicleRequest request = JsonSupport.GSON.fromJson(envelope, EnterVehicleRequest.class);
+        Optional<User> userOpt = authService.resolveUser(request.getToken());
+        if (userOpt.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        if (userOpt.get().getRole() == UserRole.ADMIN) {
+            return Response.error(StatusCode.UNAUTHORIZED, "Apenas usuários comuns podem utilizar este endpoint.");
+        }
+        if (request.getLicensePlate() == null || request.getLicensePlate().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+        Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(request.getLicensePlate());
+        if (veiculoOpt.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+        if (!veiculoOpt.get().getOwnerUsername().equals(userOpt.get().getUsername())) {
+            return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+        }
+        // verifica se já está estacionado
+        Optional<Ticket> ticketAtivo = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
+        if (ticketAtivo.isPresent()) {
+            return Response.error(StatusCode.CONFLICT, "Veículo já está estacionado.");
+        }
+        String tipoVeiculo = veiculoOpt.get().getType();
+        // alocação atomica: menor andar, letras A-Z, menor número
+        synchronized (this) {
+            Optional<Vaga> vagaEscolhida = vagaRepository.findAll().stream()
+                    .filter(v -> "disponivel".equals(v.getStatus()) && tipoVeiculo.equals(v.getType()))
+                    .min(Comparator.comparingInt(Vaga::getFloor)
+                            .thenComparing(v -> extrairLetras(v.getSpotName()))
+                            .thenComparingInt(v -> extrairNumero(v.getSpotName())));
+            if (vagaEscolhida.isEmpty()) {
+                return Response.error(StatusCode.CONFLICT, "Nenhuma vaga disponível para o tipo do veículo.");
+            }
+            Vaga vaga = vagaEscolhida.get();
+            vaga.setStatus("ocupada");
+            vaga.setLicensePlate(request.getLicensePlate());
+            vagaRepository.update(vaga);
+            String now = ISO_FMT.format(Instant.now());
+            Ticket ticket = new Ticket(UUID.randomUUID().toString(), request.getLicensePlate(),
+                    vaga.getSpotName(), vaga.getFloor(), vaga.getType(), now);
+            ticketRepository.save(ticket);
+            return Response.created("Veículo estacionado com sucesso",
+                    new EnterVehicleData(ticket.getTicketId(), ticket.getLicensePlate(),
+                            vaga.getSpotName(), vaga.getFloor(), vaga.getType(), now));
+        }
+    }
+
+    private Response handleExitVehicle(JsonObject envelope) {
+        ExitVehicleRequest request = JsonSupport.GSON.fromJson(envelope, ExitVehicleRequest.class);
+        Optional<User> userOpt = authService.resolveUser(request.getToken());
+        if (userOpt.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+        if (request.getLicensePlate() == null || request.getLicensePlate().isBlank()) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+        if (request.getDurationMinutes() < 0) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+        }
+        // admin pode saída de qualquer veículo; user só o próprio
+        if (userOpt.get().getRole() != UserRole.ADMIN) {
+            Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(request.getLicensePlate());
+            if (veiculoOpt.isEmpty() || !veiculoOpt.get().getOwnerUsername().equals(userOpt.get().getUsername())) {
+                return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+            }
+        }
+        Optional<Ticket> ticketOpt = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
+        if (ticketOpt.isEmpty()) {
+            return Response.error(StatusCode.NOT_FOUND, "Nenhum ticket ativo para este veículo.");
+        }
+        Ticket ticket = ticketOpt.get();
+        String exitTime = ISO_FMT.format(Instant.now());
+        double amount = calcularValor(request.getDurationMinutes());
+        ticket.setExitTime(exitTime);
+        ticket.setDurationMinutes(request.getDurationMinutes());
+        ticket.setAmount(amount);
+        ticket.setActive(false);
+        ticketRepository.update(ticket);
+        // libera a vaga
+        Optional<Vaga> vagaOpt = vagaRepository.findBySpotName(ticket.getSpotName());
+        vagaOpt.ifPresent(v -> {
+            v.setStatus("disponivel");
+            v.setLicensePlate(null);
+            vagaRepository.update(v);
+        });
+        return Response.ok("Saída registrada com sucesso",
+                new ExitVehicleData(ticket.getTicketId(), ticket.getLicensePlate(),
+                        ticket.getSpotName(), ticket.getFloor(), ticket.getEntryTime(),
+                        exitTime, request.getDurationMinutes(), amount));
+    }
+
+    private static double calcularValor(int minutos) {
+        if (minutos <= 15) return 0.0;
+        double valor = 5.0;
+        if (minutos > 60) {
+            long horasExtras = (long) Math.ceil((minutos - 60.0) / 60.0);
+            valor += 5.0 * horasExtras;
+        }
+        return valor;
+    }
+
+    private static String extrairLetras(String spotName) {
+        if (spotName == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (char c : spotName.toCharArray()) {
+            if (Character.isLetter(c)) sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    private static int extrairNumero(String spotName) {
+        if (spotName == null) return 0;
+        StringBuilder sb = new StringBuilder();
+        for (char c : spotName.toCharArray()) {
+            if (Character.isDigit(c)) sb.append(c);
+        }
+        try { return Integer.parseInt(sb.toString()); }
+        catch (NumberFormatException e) { return 0; }
     }
 
     // ---- helpers ----
@@ -574,9 +757,14 @@ public final class RequestDispatcher {
         Optional<User> user = authService.resolveUser(token);
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (user.get().getRole() != UserRole.ADMIN) {
-            return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Operação não autorizada.");
         }
         return null;
+    }
+
+    private void notifySessionChange() {
+        listener.onSessionCountChanged(authService.activeSessionCount());
+        listener.onLoggedUsersChanged(authService.activeUsernames());
     }
 
     private Response validarCadastro(String name, String username, String password) {
