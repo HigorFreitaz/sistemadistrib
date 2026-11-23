@@ -565,7 +565,7 @@ public final class RequestDispatcher {
         Optional<Vaga> vaga = vagaRepository.findAll().stream()
                 .filter(v -> request.getLicensePlate().equals(v.getLicensePlate()))
                 .findFirst();
-        if (vaga.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado em nenhuma vaga.");
+        if (vaga.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         Optional<Ticket> ticket = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
         String ticketId = ticket.map(Ticket::getTicketId).orElse(null);
         String entryTime = ticket.map(Ticket::getEntryTime).orElse(null);
@@ -650,7 +650,7 @@ public final class RequestDispatcher {
             Ticket ticket = new Ticket(UUID.randomUUID().toString(), request.getLicensePlate(),
                     vaga.getSpotName(), vaga.getFloor(), vaga.getType(), now);
             ticketRepository.save(ticket);
-            return Response.created("Veículo estacionado com sucesso",
+            return Response.created("Entrada registrada com sucesso",
                     new EnterVehicleData(ticket.getTicketId(), ticket.getLicensePlate(),
                             vaga.getSpotName(), vaga.getFloor(), vaga.getType(), now));
         }
@@ -673,29 +673,32 @@ public final class RequestDispatcher {
                 return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
             }
         }
-        Optional<Ticket> ticketOpt = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
-        if (ticketOpt.isEmpty()) {
-            return Response.error(StatusCode.NOT_FOUND, "Nenhum ticket ativo para este veículo.");
+        // sincronizado para evitar double-exit concorrente na mesma placa
+        synchronized (this) {
+            Optional<Ticket> ticketOpt = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
+            if (ticketOpt.isEmpty()) {
+                return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
+            }
+            Ticket ticket = ticketOpt.get();
+            String exitTime = ISO_FMT.format(Instant.now());
+            double amount = calcularValor(request.getDurationMinutes());
+            ticket.setExitTime(exitTime);
+            ticket.setDurationMinutes(request.getDurationMinutes());
+            ticket.setAmount(amount);
+            ticket.setActive(false);
+            ticketRepository.update(ticket);
+            // libera a vaga
+            Optional<Vaga> vagaOpt = vagaRepository.findBySpotName(ticket.getSpotName());
+            vagaOpt.ifPresent(v -> {
+                v.setStatus("disponivel");
+                v.setLicensePlate(null);
+                vagaRepository.update(v);
+            });
+            return Response.ok("Saída registrada com sucesso",
+                    new ExitVehicleData(ticket.getTicketId(), ticket.getLicensePlate(),
+                            ticket.getSpotName(), ticket.getFloor(), ticket.getEntryTime(),
+                            exitTime, request.getDurationMinutes(), amount));
         }
-        Ticket ticket = ticketOpt.get();
-        String exitTime = ISO_FMT.format(Instant.now());
-        double amount = calcularValor(request.getDurationMinutes());
-        ticket.setExitTime(exitTime);
-        ticket.setDurationMinutes(request.getDurationMinutes());
-        ticket.setAmount(amount);
-        ticket.setActive(false);
-        ticketRepository.update(ticket);
-        // libera a vaga
-        Optional<Vaga> vagaOpt = vagaRepository.findBySpotName(ticket.getSpotName());
-        vagaOpt.ifPresent(v -> {
-            v.setStatus("disponivel");
-            v.setLicensePlate(null);
-            vagaRepository.update(v);
-        });
-        return Response.ok("Saída registrada com sucesso",
-                new ExitVehicleData(ticket.getTicketId(), ticket.getLicensePlate(),
-                        ticket.getSpotName(), ticket.getFloor(), ticket.getEntryTime(),
-                        exitTime, request.getDurationMinutes(), amount));
     }
 
     private static double calcularValor(int minutos) {

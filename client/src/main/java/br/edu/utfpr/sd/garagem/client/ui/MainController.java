@@ -21,6 +21,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVehiclesRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.ReadVehiclesRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.RegisterRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.Response;
@@ -224,10 +225,9 @@ public final class MainController {
                     role = data.getRole();
                     applyRoleUI();
                     handleRefreshVagas();
+                    handleRefreshVehicles();
                     if (role == UserRole.ADMIN) {
                         handleRefreshUsers();
-                    } else {
-                        handleRefreshVehicles();
                     }
                 } catch (JsonSyntaxException e) {
                     LOGGER.log(Level.WARNING, "resposta de getuser em formato inesperado", e);
@@ -249,10 +249,12 @@ public final class MainController {
             createVagaButton.setManaged(true);
             deleteVagaButton.setVisible(true);
             deleteVagaButton.setManaged(true);
+            availabilityButton.setVisible(true);
+            availabilityButton.setManaged(true);
+            veiculosTab.setText("Todos os Veículos");
             tabPane.getTabs().add(usuariosTab);
         } else {
             roleLabel.setText("Usuário");
-            // EP-3: usuários usam entervehicle/exitvehicle
             estacionarButton.setVisible(true);
             estacionarButton.setManaged(true);
             sairButton.setVisible(true);
@@ -361,21 +363,14 @@ public final class MainController {
         Optional<String> newStatus = statusDlg.showAndWait();
         if (newStatus.isEmpty()) return;
 
-        TextInputDialog plateDlg = new TextInputDialog(selected.getLicensePlate() != null ? selected.getLicensePlate() : "");
-        plateDlg.setHeaderText(null);
-        plateDlg.setTitle("Placa");
-        plateDlg.setContentText("Placa do veículo (vazio = nenhum):");
-        Optional<String> plate = plateDlg.showAndWait();
-
         setLoading(true);
-        String plateValue = plate.map(p -> p.isBlank() ? null : p.trim()).orElse(selected.getLicensePlate());
         Task<Response> task = new Task<>() {
             @Override
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
                     return connector.send(new UpdateVagaRequest(token, selected.getSpotName(),
-                            null, newStatus.get(), plateValue, null));
+                            null, newStatus.get(), null, null));
                 }
             }
         };
@@ -512,6 +507,9 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
+                    if (role == UserRole.ADMIN) {
+                        return connector.send(new ReadVehiclesRequest(token));
+                    }
                     return connector.send(new GetVehiclesRequest(token));
                 }
             }
@@ -1070,7 +1068,6 @@ public final class MainController {
         this.loading = loading;
         progressIndicator.setVisible(loading);
         progressIndicator.setManaged(loading);
-        if (!loading) statusLabel.setText("");
     }
 
     private void showError(String message) {

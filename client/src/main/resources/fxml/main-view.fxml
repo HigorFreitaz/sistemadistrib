@@ -157,7 +157,7 @@
                     </Tab>
 
                     <!-- TAB USUÁRIOS (admin) -->
-                    <Tab fx:id="usuariosTab" text="Usuarios">
+                    <Tab fx:id="usuariosTab" text="Usuários">
                         <VBox spacing="10" maxWidth="Infinity" maxHeight="Infinity">
                             <padding><Insets top="14" right="16" bottom="14" left="16"/></padding>
 
