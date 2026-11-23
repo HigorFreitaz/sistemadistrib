@@ -117,10 +117,11 @@
 
                             <HBox spacing="8" alignment="CENTER_LEFT">
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <Button text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
-                                        styleClass="button-primary"/>
+                                <Button fx:id="createVehicleButton" text="+ Cadastrar veículo" onAction="#handleCreateVehicle"
+                                        styleClass="button-primary" managed="false" visible="false"/>
                                 <Button fx:id="editVehicleButton" onAction="#handleEditVehicle"
-                                        disable="true" styleClass="button-icon-edit" contentDisplay="GRAPHIC_ONLY">
+                                        disable="true" styleClass="button-icon-edit" contentDisplay="GRAPHIC_ONLY"
+                                        managed="false" visible="false">
                                     <graphic><SVGPath fill="#55607A" content="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></graphic>
                                     <tooltip><Tooltip text="Editar veículo selecionado"/></tooltip>
                                 </Button>

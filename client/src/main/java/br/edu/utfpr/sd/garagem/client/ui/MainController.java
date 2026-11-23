@@ -106,6 +106,7 @@ public final class MainController {
     @FXML private TableColumn<VehicleData, String> vehicleModelCol;
     @FXML private TableColumn<VehicleData, String> vehicleTypeCol;
     @FXML private TableColumn<VehicleData, String> vehiclePlateCol;
+    @FXML private Button createVehicleButton;
     @FXML private Button editVehicleButton;
     @FXML private Button deleteVehicleButton;
     @FXML private Button estacionarButton;
@@ -169,14 +170,18 @@ public final class MainController {
                 });
 
         FilteredList<UserData> filteredUsers = new FilteredList<>(allUsers, p -> true);
-        userSearchField.textProperty().addListener((obs, old, text) ->
+        userSearchField.textProperty().addListener((obs, old, text) -> {
+            if ((text == null || text.isBlank()) && old != null && !old.isBlank()) {
+                handleRefreshUsers();
+                return;
+            }
             filteredUsers.setPredicate(u -> {
                 if (text == null || text.isBlank()) return true;
                 String lower = text.toLowerCase();
                 return (u.getUsername() != null && u.getUsername().toLowerCase().contains(lower))
                     || (u.getName() != null && u.getName().toLowerCase().contains(lower));
-            })
-        );
+            });
+        });
         usersTable.setItems(filteredUsers);
     }
 
@@ -251,10 +256,16 @@ public final class MainController {
             deleteVagaButton.setManaged(true);
             availabilityButton.setVisible(true);
             availabilityButton.setManaged(true);
+            sairButton.setVisible(true);
+            sairButton.setManaged(true);
             veiculosTab.setText("Todos os Veículos");
             tabPane.getTabs().add(usuariosTab);
         } else {
             roleLabel.setText("Usuário");
+            createVehicleButton.setVisible(true);
+            createVehicleButton.setManaged(true);
+            editVehicleButton.setVisible(true);
+            editVehicleButton.setManaged(true);
             estacionarButton.setVisible(true);
             estacionarButton.setManaged(true);
             sairButton.setVisible(true);

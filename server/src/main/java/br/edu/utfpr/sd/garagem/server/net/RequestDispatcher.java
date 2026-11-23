@@ -608,10 +608,7 @@ public final class RequestDispatcher {
                             dispEletrico, dispCombustao);
                 })
                 .collect(Collectors.toList());
-        String availMsg = result.isEmpty() ? "Nenhuma vaga cadastrada." :
-                result.stream().allMatch(a -> a.getAvailableSpots() == 0)
-                        ? "Nenhuma vaga disponível no momento." : "Vagas obtidas com sucesso";
-        return Response.ok(availMsg, result);
+        return Response.ok("Vagas obtidas com sucesso", result);
     }
 
     private Response handleEnterVehicle(JsonObject envelope) {
@@ -767,7 +764,7 @@ public final class RequestDispatcher {
         Optional<User> user = authService.resolveUser(token);
         if (user.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
         if (user.get().getRole() != UserRole.ADMIN) {
-            return Response.error(StatusCode.UNAUTHORIZED, "Operação não autorizada.");
+            return Response.error(StatusCode.UNAUTHORIZED, "Operação não autorizada");
         }
         return null;
     }
