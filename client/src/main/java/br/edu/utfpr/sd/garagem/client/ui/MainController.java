@@ -18,7 +18,6 @@ import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleData;
 import br.edu.utfpr.sd.garagem.common.protocol.FindVehicleRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetAvailabilityRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
-import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVehiclesRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.ReadUsersRequest;
@@ -377,17 +376,22 @@ public final class MainController {
         newNameField.setPromptText("Deixe em branco para não alterar");
         newNameField.setPrefWidth(200);
 
+        boolean vagaOcupada = "ocupada".equals(selected.getStatus());
+
         ComboBox<String> statusBox = new ComboBox<>();
         statusBox.getItems().addAll("disponivel", "fora_de_servico");
-        // vaga ocupada não pode ir direto a fora_de_servico; default para disponivel
         String initialStatus = "fora_de_servico".equals(selected.getStatus()) ? "fora_de_servico" : "disponivel";
         statusBox.setValue(initialStatus);
         statusBox.setPrefWidth(200);
+        statusBox.setDisable(vagaOcupada);
 
         grid.add(new Label("Novo nome (opcional):"), 0, 0);
         grid.add(newNameField, 1, 0);
         grid.add(new Label("Status:"), 0, 1);
         grid.add(statusBox, 1, 1);
+        if (vagaOcupada) {
+            grid.add(new Label("Vaga ocupada — use Registrar Saída para liberar"), 1, 2);
+        }
 
         dlg.getDialogPane().setContent(grid);
         dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -396,7 +400,8 @@ public final class MainController {
         if (result.isEmpty() || result.get() != ButtonType.OK) return;
 
         String newName = newNameField.getText().trim();
-        String chosenStatus = statusBox.getValue();
+        // Para vaga ocupada, não envia mudança de status (apenas renomear é permitido)
+        String chosenStatus = vagaOcupada ? null : statusBox.getValue();
 
         setLoading(true);
         Task<Response> task = new Task<>() {
