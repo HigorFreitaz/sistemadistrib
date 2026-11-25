@@ -323,6 +323,9 @@ public final class RequestDispatcher {
         // renomear
         String newSpotName = request.getNewSpotName();
         if (newSpotName != null && !newSpotName.isBlank() && !newSpotName.equals(request.getSpotName())) {
+            if (newSpotName.length() > 4) {
+                return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
+            }
             if (!"disponivel".equals(vaga.getStatus()) && !"fora_de_servico".equals(vaga.getStatus())) {
                 return Response.error(StatusCode.CONFLICT, "Não é possível renomear uma vaga ocupada.");
             }
@@ -348,6 +351,10 @@ public final class RequestDispatcher {
         // fora_de_servico só pode ser definido a partir de disponivel
         if ("fora_de_servico".equals(newStatus) && !"disponivel".equals(vaga.getStatus())) {
             return Response.error(StatusCode.CONFLICT, "A vaga precisa estar disponível para ir a fora de serviço.");
+        }
+        // disponivel não pode ser forçado em vaga ocupada (ticket ficaria ativo)
+        if ("disponivel".equals(newStatus) && "ocupada".equals(vaga.getStatus())) {
+            return Response.error(StatusCode.CONFLICT, "Não é possível liberar uma vaga ocupada via updatevaga. Use exitvehicle.");
         }
 
         if (newStatus != null) vaga.setStatus(newStatus);
