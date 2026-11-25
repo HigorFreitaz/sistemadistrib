@@ -309,13 +309,9 @@ public final class RequestDispatcher {
 
     private Response handleUpdateVaga(JsonObject envelope) {
         UpdateVagaRequest request = JsonSupport.GSON.fromJson(envelope, UpdateVagaRequest.class);
-        if (request.getToken() == null || request.getToken().isBlank()) {
-            return Response.error(StatusCode.BAD_REQUEST, "Token de autenticação não fornecido.");
-        }
-        Optional<User> userOpt = authService.resolveUser(request.getToken());
-        if (userOpt.isEmpty()) return Response.error(StatusCode.UNAUTHORIZED, "Sessão expirada ou encerrada.");
-        User caller = userOpt.get();
-        boolean isAdmin = caller.getRole() == UserRole.ADMIN;
+        // EP-3: updatevaga é admin-only; licensePlate removido do protocolo
+        Response adminCheck = verificarAdmin(request.getToken());
+        if (adminCheck != null) return adminCheck;
 
         if (request.getSpotName() == null || request.getSpotName().isBlank()) {
             return Response.error(StatusCode.BAD_REQUEST, "spotName é obrigatório.");
@@ -324,10 +320,9 @@ public final class RequestDispatcher {
         if (vagaOpt.isEmpty()) return Response.error(StatusCode.NOT_FOUND, "Vaga não encontrada.");
         Vaga vaga = vagaOpt.get();
 
-        // renomear — admin only
+        // renomear
         String newSpotName = request.getNewSpotName();
         if (newSpotName != null && !newSpotName.isBlank() && !newSpotName.equals(request.getSpotName())) {
-            if (!isAdmin) return Response.error(StatusCode.UNAUTHORIZED, "Apenas administradores podem realizar esta operação.");
             if (!"disponivel".equals(vaga.getStatus()) && !"fora_de_servico".equals(vaga.getStatus())) {
                 return Response.error(StatusCode.CONFLICT, "Não é possível renomear uma vaga ocupada.");
             }
@@ -341,45 +336,11 @@ public final class RequestDispatcher {
         }
 
         String newStatus = request.getStatus();
-        String newPlate = request.getLicensePlate();
 
-        // usuário estacionando — plate fornecida + status ocupada
-        if (!isAdmin && newPlate != null && !newPlate.isBlank() && "ocupada".equals(newStatus)) {
-            if (!"disponivel".equals(vaga.getStatus())) {
-                return Response.error(StatusCode.CONFLICT, "Vaga não está disponível.");
-            }
-            Optional<Veiculo> veiculoParaEstacionar = vehicleRepository.findByLicensePlate(newPlate);
-            if (veiculoParaEstacionar.isEmpty()) {
-                return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
-            }
-            if (!vaga.getType().equals(veiculoParaEstacionar.get().getType())) {
-                return Response.error(StatusCode.CONFLICT, "Tipo do veículo incompatível com o tipo da vaga.");
-            }
-            vaga.setLicensePlate(newPlate);
-            vaga.setStatus("ocupada");
-            vagaRepository.update(vaga);
-            return Response.ok("Vaga atualizada com sucesso", null);
+        // valida status se fornecido: apenas disponivel e fora_de_servico são permitidos via updatevaga
+        if (newStatus != null && !"disponivel".equals(newStatus) && !"fora_de_servico".equals(newStatus)) {
+            return Response.error(StatusCode.BAD_REQUEST, "Campos obrigatórios ausentes ou inválidos.");
         }
-
-        // usuário liberando — status disponivel (ou omitido), vaga estava ocupada
-        if (!isAdmin && "ocupada".equals(vaga.getStatus())
-                && ("disponivel".equals(newStatus) || newStatus == null)) {
-            String currentPlate = vaga.getLicensePlate();
-            if (currentPlate != null) {
-                Optional<Veiculo> veiculoOpt = vehicleRepository.findByLicensePlate(currentPlate);
-                if (veiculoOpt.isEmpty() || !veiculoOpt.get().getOwnerUsername().equals(caller.getUsername())) {
-                    return Response.error(StatusCode.UNAUTHORIZED, "Operação não autorizada.");
-                }
-            }
-            vaga.setLicensePlate(null);
-            vaga.setStatus("disponivel");
-            vagaRepository.update(vaga);
-            return Response.ok("Vaga atualizada com sucesso", null);
-        }
-
-        // demais operações — apenas admin
-        if (!isAdmin) return Response.error(StatusCode.UNAUTHORIZED, "Apenas administradores podem realizar esta operação.");
-
         // floor só pode ser alterado quando a vaga não está ocupada
         if (request.getFloor() != null && "ocupada".equals(vaga.getStatus())) {
             return Response.error(StatusCode.CONFLICT, "Não é possível alterar o andar de uma vaga ocupada.");
@@ -390,12 +351,7 @@ public final class RequestDispatcher {
         }
 
         if (newStatus != null) vaga.setStatus(newStatus);
-        // ao liberar uma vaga, a placa e sempre removida independente do que foi enviado
-        if ("disponivel".equals(vaga.getStatus())) {
-            vaga.setLicensePlate(null);
-        } else if (newPlate != null) {
-            vaga.setLicensePlate(newPlate.isBlank() ? null : newPlate);
-        }
+        if ("disponivel".equals(vaga.getStatus())) vaga.setLicensePlate(null);
         if (request.getFloor() != null) vaga.setFloor(request.getFloor());
         vagaRepository.update(vaga);
         return Response.ok("Vaga atualizada com sucesso", null);
@@ -628,14 +584,13 @@ public final class RequestDispatcher {
         if (!veiculoOpt.get().getOwnerUsername().equals(userOpt.get().getUsername())) {
             return Response.error(StatusCode.NOT_FOUND, "Veículo não encontrado.");
         }
-        // verifica se já está estacionado
-        Optional<Ticket> ticketAtivo = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
-        if (ticketAtivo.isPresent()) {
-            return Response.error(StatusCode.CONFLICT, "Veículo já está estacionado.");
-        }
         String tipoVeiculo = veiculoOpt.get().getType();
-        // alocação atomica: menor andar, letras A-Z, menor número
+        // alocação e verificação de ticket dentro do synchronized para evitar race condition
         synchronized (this) {
+            Optional<Ticket> ticketAtivo = ticketRepository.findActiveByLicensePlate(request.getLicensePlate());
+            if (ticketAtivo.isPresent()) {
+                return Response.error(StatusCode.CONFLICT, "Veículo já está estacionado.");
+            }
             Optional<Vaga> vagaEscolhida = vagaRepository.findAll().stream()
                     .filter(v -> "disponivel".equals(v.getStatus()) && tipoVeiculo.equals(v.getType()))
                     .min(Comparator.comparingInt(Vaga::getFloor)
