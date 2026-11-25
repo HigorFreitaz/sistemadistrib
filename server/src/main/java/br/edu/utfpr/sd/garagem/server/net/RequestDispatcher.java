@@ -348,8 +348,10 @@ public final class RequestDispatcher {
         if (request.getFloor() != null && "ocupada".equals(vaga.getStatus())) {
             return Response.error(StatusCode.CONFLICT, "Não é possível alterar o andar de uma vaga ocupada.");
         }
-        // fora_de_servico só pode ser definido a partir de disponivel
-        if ("fora_de_servico".equals(newStatus) && !"disponivel".equals(vaga.getStatus())) {
+        // fora_de_servico só pode ser definido a partir de disponivel (no-op é permitido)
+        if ("fora_de_servico".equals(newStatus)
+                && !"disponivel".equals(vaga.getStatus())
+                && !"fora_de_servico".equals(vaga.getStatus())) {
             return Response.error(StatusCode.CONFLICT, "A vaga precisa estar disponível para ir a fora de serviço.");
         }
         // disponivel não pode ser forçado em vaga ocupada (ticket ficaria ativo)
