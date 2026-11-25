@@ -21,6 +21,7 @@ import br.edu.utfpr.sd.garagem.common.protocol.GetUserRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVagasRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.GetVehiclesRequest;
+import br.edu.utfpr.sd.garagem.common.protocol.ReadUsersRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.ReadVehiclesRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.LogoutRequest;
 import br.edu.utfpr.sd.garagem.common.protocol.RegisterRequest;
@@ -360,19 +361,42 @@ public final class MainController {
         VagaData selected = vagasTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
 
-        if (role != UserRole.ADMIN) {
-            handleEstacionar(selected);
-            return;
-        }
+        // --- fluxo admin: editar vaga com formulário unificado ---
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Editar Vaga");
+        dlg.setHeaderText("Vaga: " + selected.getSpotName()
+                + "  |  Andar: " + selected.getFloor()
+                + "  |  Tipo: " + selected.getType());
 
-        // --- fluxo admin: editar status, placa, renomear ---
-        ChoiceDialog<String> statusDlg = new ChoiceDialog<>(selected.getStatus(),
-                "disponivel", "fora_de_servico", "ocupada");
-        statusDlg.setHeaderText("Vaga: " + selected.getSpotName());
-        statusDlg.setTitle("Alterar status");
-        statusDlg.setContentText("Novo status:");
-        Optional<String> newStatus = statusDlg.showAndWait();
-        if (newStatus.isEmpty()) return;
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(16, 16, 10, 16));
+
+        TextField newNameField = new TextField();
+        newNameField.setPromptText("Deixe em branco para não alterar");
+        newNameField.setPrefWidth(200);
+
+        ComboBox<String> statusBox = new ComboBox<>();
+        statusBox.getItems().addAll("disponivel", "fora_de_servico");
+        // vaga ocupada não pode ir direto a fora_de_servico; default para disponivel
+        String initialStatus = "fora_de_servico".equals(selected.getStatus()) ? "fora_de_servico" : "disponivel";
+        statusBox.setValue(initialStatus);
+        statusBox.setPrefWidth(200);
+
+        grid.add(new Label("Novo nome (opcional):"), 0, 0);
+        grid.add(newNameField, 1, 0);
+        grid.add(new Label("Status:"), 0, 1);
+        grid.add(statusBox, 1, 1);
+
+        dlg.getDialogPane().setContent(grid);
+        dlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Optional<ButtonType> result = dlg.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return;
+
+        String newName = newNameField.getText().trim();
+        String chosenStatus = statusBox.getValue();
 
         setLoading(true);
         Task<Response> task = new Task<>() {
@@ -381,7 +405,7 @@ public final class MainController {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
                     return connector.send(new UpdateVagaRequest(token, selected.getSpotName(),
-                            null, newStatus.get(), null, null));
+                            newName.isBlank() ? null : newName, chosenStatus, null));
                 }
             }
         };
@@ -393,54 +417,6 @@ public final class MainController {
         });
         task.setOnFailed(event -> { setLoading(false); showError("Falha ao atualizar vaga."); });
         TaskRunner.runInBackground(task, "main-update-vaga-task");
-    }
-
-    private void handleEstacionar(VagaData vaga) {
-        if ("fora_de_servico".equals(vaga.getStatus())) {
-            showError("Esta vaga está fora de serviço e não pode ser utilizada.");
-            return;
-        }
-
-        final String newStatus;
-        final String newPlate;
-
-        if ("disponivel".equals(vaga.getStatus())) {
-            TextInputDialog plateDlg = new TextInputDialog();
-            plateDlg.setTitle("Estacionar");
-            plateDlg.setHeaderText("Vaga: " + vaga.getSpotName() + " (disponível)");
-            plateDlg.setContentText("Placa do seu veículo:");
-            Optional<String> plate = plateDlg.showAndWait();
-            if (plate.isEmpty() || plate.get().isBlank()) return;
-            newStatus = "ocupada";
-            newPlate = plate.get().trim();
-        } else {
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Liberar a vaga '" + vaga.getSpotName() + "'?", ButtonType.YES, ButtonType.NO);
-            confirm.setHeaderText(null);
-            if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
-            newStatus = "disponivel";
-            newPlate = null;
-        }
-
-        setLoading(true);
-        Task<Response> task = new Task<>() {
-            @Override
-            protected Response call() throws ConnectionException {
-                try (SocketConnector connector = new SocketConnector(host, port)) {
-                    connector.connect();
-                    return connector.send(new UpdateVagaRequest(token, vaga.getSpotName(),
-                            null, newStatus, newPlate, null));
-                }
-            }
-        };
-        task.setOnSucceeded(event -> {
-            setLoading(false);
-            Response r = task.getValue();
-            if (r.getStatusCode() == StatusCode.OK) handleRefreshVagas();
-            else showError(r.getMessage());
-        });
-        task.setOnFailed(event -> { setLoading(false); showError("Falha ao atualizar vaga."); });
-        TaskRunner.runInBackground(task, "main-estacionar-task");
     }
 
     @FXML
@@ -803,7 +779,7 @@ public final class MainController {
             protected Response call() throws ConnectionException {
                 try (SocketConnector connector = new SocketConnector(host, port)) {
                     connector.connect();
-                    return connector.send(new GetUsersRequest(token));
+                    return connector.send(new ReadUsersRequest(token));
                 }
             }
         };
