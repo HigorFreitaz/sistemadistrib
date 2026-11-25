@@ -56,6 +56,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -193,6 +194,30 @@ public final class MainController {
         vagaFloorCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getFloor()));
         vagaTypeCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getType()));
         vagaStatusCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getStatus()));
+        vagaStatusCol.setCellFactory(col -> new TableCell<>() {
+            private final Label pill = new Label();
+            {
+                pill.setStyle("-fx-background-radius: 10; -fx-padding: 2 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+                setGraphic(pill);
+                setText(null);
+            }
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                } else {
+                    pill.setText(status);
+                    switch (status) {
+                        case "disponivel"     -> pill.setStyle("-fx-background-color: #DFF5E7; -fx-text-fill: #1C8A4C; -fx-background-radius: 10; -fx-padding: 2 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+                        case "ocupada"        -> pill.setStyle("-fx-background-color: #FBE4E4; -fx-text-fill: #C23B3B; -fx-background-radius: 10; -fx-padding: 2 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+                        case "fora_de_servico"-> pill.setStyle("-fx-background-color: #FFF6DC; -fx-text-fill: #9A6400; -fx-background-radius: 10; -fx-padding: 2 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+                        default               -> pill.setStyle("-fx-background-color: #EEF1F6; -fx-text-fill: #55607A; -fx-background-radius: 10; -fx-padding: 2 10; -fx-font-size: 11px; -fx-font-weight: bold;");
+                    }
+                    setGraphic(pill);
+                }
+            }
+        });
         vagaPlateCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getLicensePlate()));
 
         vehicleBrandCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getBrand()));
