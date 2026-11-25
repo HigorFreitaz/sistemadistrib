@@ -60,9 +60,13 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.geometry.Pos;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -545,14 +549,18 @@ public final class MainController {
             if (r.getStatusCode() == StatusCode.CREATED) {
                 try {
                     EnterVehicleData data = JsonSupport.GSON.fromJson(r.getData(), EnterVehicleData.class);
-                    statusLabel.setText("Estacionado: vaga " + data.getSpotName()
-                            + " · andar " + data.getFloor()
-                            + " · ticket " + data.getTicketId());
-                    handleRefreshVagas();
+                    showInfo("Entrada registrada com sucesso", new String[][]{
+                        {"Placa",   data.getLicensePlate()},
+                        {"Vaga",    data.getSpotName()},
+                        {"Andar",   String.valueOf(data.getFloor())},
+                        {"Tipo",    data.getType()},
+                        {"Ticket",  data.getTicketId()},
+                        {"Hora",    data.getEntryTime() != null ? data.getEntryTime() : "—"}
+                    });
                 } catch (JsonSyntaxException e) {
-                    statusLabel.setText("Veículo estacionado.");
-                    handleRefreshVagas();
+                    showInfo("Entrada registrada com sucesso", new String[][]{{"Status", "Veículo estacionado."}});
                 }
+                handleRefreshVagas();
             } else {
                 showError(r.getMessage());
             }
@@ -566,14 +574,37 @@ public final class MainController {
         VehicleData selected = vehiclesTable.getSelectionModel().getSelectedItem();
         if (selected == null) return;
         String plate = selected.getLicensePlate();
-        TextInputDialog dlg = new TextInputDialog("0");
-        dlg.setTitle("Registrar saída");
-        dlg.setHeaderText("Placa: " + plate);
-        dlg.setContentText("Tempo de permanência (minutos):");
-        Optional<String> resp = dlg.showAndWait();
-        if (resp.isEmpty()) return;
+
+        Dialog<ButtonType> exitDlg = new Dialog<>();
+        exitDlg.setTitle("Registrar Saída");
+        URL exitCss = getClass().getResource("/css/app.css");
+        if (exitCss != null) exitDlg.getDialogPane().getStylesheets().add(exitCss.toExternalForm());
+
+        GridPane exitGrid = new GridPane();
+        exitGrid.setHgap(12);
+        exitGrid.setVgap(10);
+        exitGrid.setPadding(new Insets(16, 24, 8, 24));
+
+        Label plateLabel = new Label(plate);
+        plateLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #21283B;");
+        TextField durationField = new TextField("0");
+        durationField.setPromptText("minutos");
+        durationField.setPrefWidth(100);
+
+        exitGrid.add(new Label("Placa:"), 0, 0);
+        exitGrid.add(plateLabel, 1, 0);
+        exitGrid.add(new Label("Tempo de permanência (min):"), 0, 1);
+        exitGrid.add(durationField, 1, 1);
+
+        exitDlg.getDialogPane().setContent(exitGrid);
+        exitDlg.getDialogPane().setHeaderText("Registrar saída do veículo");
+        exitDlg.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Optional<ButtonType> exitResult = exitDlg.showAndWait();
+        if (exitResult.isEmpty() || exitResult.get() != ButtonType.OK) return;
+
         int minutos;
-        try { minutos = Integer.parseInt(resp.get().trim()); }
+        try { minutos = Integer.parseInt(durationField.getText().trim()); }
         catch (NumberFormatException e) { showError("Informe um número de minutos válido."); return; }
         if (minutos < 0) { showError("Tempo não pode ser negativo."); return; }
         final int min = minutos;
@@ -593,14 +624,18 @@ public final class MainController {
             if (r.getStatusCode() == StatusCode.OK) {
                 try {
                     ExitVehicleData data = JsonSupport.GSON.fromJson(r.getData(), ExitVehicleData.class);
-                    statusLabel.setText("Saída registrada: vaga " + data.getSpotName()
-                            + " · " + data.getDurationMinutes() + " min"
-                            + " · R$ " + String.format("%.2f", data.getAmount()));
-                    handleRefreshVagas();
+                    showInfo("Saída registrada com sucesso", new String[][]{
+                        {"Placa",    data.getLicensePlate()},
+                        {"Vaga",     data.getSpotName()},
+                        {"Duração",  data.getDurationMinutes() + " min"},
+                        {"Valor",    "R$ " + String.format("%.2f", data.getAmount())},
+                        {"Entrada",  data.getEntryTime() != null ? data.getEntryTime() : "—"},
+                        {"Saída",    data.getExitTime() != null ? data.getExitTime() : "—"}
+                    });
                 } catch (JsonSyntaxException e) {
-                    statusLabel.setText("Saída registrada.");
-                    handleRefreshVagas();
+                    showInfo("Saída registrada com sucesso", new String[][]{{"Status", "Saída registrada."}});
                 }
+                handleRefreshVagas();
             } else {
                 showError(r.getMessage());
             }
@@ -629,21 +664,12 @@ public final class MainController {
                     List<AvailabilityData> list = JsonSupport.GSON.fromJson(r.getData(),
                             new TypeToken<List<AvailabilityData>>() {}.getType());
                     if (list == null || list.isEmpty()) {
-                        statusLabel.setText("Nenhuma vaga cadastrada.");
+                        showInfo("Disponibilidade", new String[][]{{"Status", "Nenhuma vaga cadastrada."}});
                         return;
                     }
-                    StringBuilder sb = new StringBuilder("Disponibilidade: ");
-                    for (AvailabilityData a : list) {
-                        sb.append("Andar ").append(a.getFloor())
-                                .append(": ").append(a.getAvailableSpots())
-                                .append("/").append(a.getTotalSpots())
-                                .append(" livres (comb=").append(a.getAvailableCombustao())
-                                .append(", elet=").append(a.getAvailableEletrico())
-                                .append(")  ");
-                    }
-                    statusLabel.setText(sb.toString());
+                    showAvailability(list);
                 } catch (JsonSyntaxException e) {
-                    statusLabel.setText("Resposta inválida.");
+                    showError("Resposta inválida do servidor.");
                 }
             } else {
                 showError(r.getMessage());
@@ -1059,6 +1085,101 @@ public final class MainController {
         this.loading = loading;
         progressIndicator.setVisible(loading);
         progressIndicator.setManaged(loading);
+    }
+
+    private void showInfo(String title, String[][] rows) {
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle(title);
+        URL cssUrl = getClass().getResource("/css/app.css");
+        if (cssUrl != null) dlg.getDialogPane().getStylesheets().add(cssUrl.toExternalForm());
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(16, 24, 12, 24));
+        content.setPrefWidth(320);
+
+        Label headerLabel = new Label(title);
+        headerLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1C8A4C;");
+        content.getChildren().add(headerLabel);
+
+        Region sep = new Region();
+        sep.setStyle("-fx-background-color: #DDE3EE; -fx-min-height: 1; -fx-max-height: 1;");
+        sep.setMaxWidth(Double.MAX_VALUE);
+        content.getChildren().add(sep);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(18);
+        grid.setVgap(7);
+        for (int i = 0; i < rows.length; i++) {
+            Label key = new Label(rows[i][0] + ":");
+            key.setStyle("-fx-text-fill: #55607A; -fx-font-size: 12px;");
+            Label val = new Label(rows[i].length > 1 ? rows[i][1] : "");
+            val.setStyle("-fx-font-weight: bold; -fx-text-fill: #21283B; -fx-font-size: 13px;");
+            grid.add(key, 0, i);
+            grid.add(val, 1, i);
+        }
+        content.getChildren().add(grid);
+
+        dlg.getDialogPane().setContent(content);
+        dlg.getDialogPane().setGraphic(null);
+        dlg.getDialogPane().setHeaderText(null);
+        dlg.getDialogPane().getButtonTypes().add(ButtonType.OK);
+        dlg.showAndWait();
+    }
+
+    private void showAvailability(List<AvailabilityData> list) {
+        Dialog<ButtonType> dlg = new Dialog<>();
+        dlg.setTitle("Disponibilidade por Andar");
+        URL cssUrl = getClass().getResource("/css/app.css");
+        if (cssUrl != null) dlg.getDialogPane().getStylesheets().add(cssUrl.toExternalForm());
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(16, 24, 12, 24));
+
+        Label headerLabel = new Label("Disponibilidade por Andar");
+        headerLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #3A6FF7;");
+        content.getChildren().add(headerLabel);
+
+        Region sep = new Region();
+        sep.setStyle("-fx-background-color: #DDE3EE; -fx-min-height: 1; -fx-max-height: 1;");
+        sep.setMaxWidth(Double.MAX_VALUE);
+        content.getChildren().add(sep);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(8);
+
+        String hStyle = "-fx-font-weight: bold; -fx-text-fill: #55607A; -fx-font-size: 11px;";
+        grid.add(styledLabel("Andar",     hStyle), 0, 0);
+        grid.add(styledLabel("Livres",    hStyle), 1, 0);
+        grid.add(styledLabel("Total",     hStyle), 2, 0);
+        grid.add(styledLabel("Combustão", hStyle), 3, 0);
+        grid.add(styledLabel("Elétrico",  hStyle), 4, 0);
+
+        for (int i = 0; i < list.size(); i++) {
+            AvailabilityData a = list.get(i);
+            int row = i + 1;
+            String avColor = a.getAvailableSpots() == 0 ? "#C23B3B"
+                    : a.getAvailableSpots() < a.getTotalSpots() ? "#F5A623" : "#1C8A4C";
+            grid.add(styledLabel("Andar " + a.getFloor(), "-fx-text-fill: #21283B; -fx-font-size: 13px;"), 0, row);
+            grid.add(styledLabel(String.valueOf(a.getAvailableSpots()),
+                    "-fx-font-weight: bold; -fx-text-fill: " + avColor + "; -fx-font-size: 13px;"), 1, row);
+            grid.add(styledLabel(String.valueOf(a.getTotalSpots()), "-fx-text-fill: #21283B; -fx-font-size: 13px;"), 2, row);
+            grid.add(styledLabel(String.valueOf(a.getAvailableCombustao()), "-fx-text-fill: #3A445C; -fx-font-size: 13px;"), 3, row);
+            grid.add(styledLabel(String.valueOf(a.getAvailableEletrico()), "-fx-text-fill: #3A445C; -fx-font-size: 13px;"), 4, row);
+        }
+        content.getChildren().add(grid);
+
+        dlg.getDialogPane().setContent(content);
+        dlg.getDialogPane().setGraphic(null);
+        dlg.getDialogPane().setHeaderText(null);
+        dlg.getDialogPane().getButtonTypes().add(ButtonType.OK);
+        dlg.showAndWait();
+    }
+
+    private static Label styledLabel(String text, String style) {
+        Label l = new Label(text);
+        l.setStyle(style);
+        return l;
     }
 
     private void showError(String message) {
